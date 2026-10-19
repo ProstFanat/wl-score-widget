@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FUT Champions Control</title>
+<style>
+  body { margin:0; padding:12px; background:#14182b; color:#fff; font-family:"Segoe UI",Helvetica,Arial,sans-serif; text-align:center; }
+  .score { font-size:28px; font-weight:700; margin-bottom:10px; }
+  .btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button { font-size:22px; font-weight:700; padding:18px 0; border:0; border-radius:10px; color:#0a0e1c; cursor:pointer; }
+  .win { background:#2ee59d; } .loss { background:#ff4d6d; }
+  .small { grid-column:span 1; font-size:14px; padding:10px 0; background:#3a4066; color:#fff; font-weight:600; }
+  .hint { margin-top:10px; font-size:12px; opacity:.55; }
+</style>
+</head>
+<body>
+<div class="score"><span id="w">0</span> W – <span id="l">0</span> L</div>
+<div class="btns">
+  <button class="win" onclick="act('win')">+ WIN (W)</button>
+  <button class="loss" onclick="act('loss')">+ LOSS (L)</button>
+  <button class="small" onclick="act('undo')">Undo (U)</button>
+  <button class="small" onclick="if(confirm('Reset for a new run?'))act('reset')">New run / Reset</button>
+</div>
+<div class="hint">Keys: W = win, L = loss, U = undo</div>
+<script>
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const getPw = () => { try { return localStorage.getItem('pw') || ''; } catch { return ''; } };
+  async function act(a) {
+    const r = await fetch(BASE + '/api/' + a, { method: 'POST', headers: { 'x-password': getPw() } });
+    if (r.status === 401) {
+      const pw = prompt('Control password:');
+      if (pw === null) return;
+      try { localStorage.setItem('pw', pw); } catch {}
+      return act(a);
+    }
+  }
+  new EventSource(BASE + '/events').onmessage = e => {
+    const s = JSON.parse(e.data);
+    document.getElementById('w').textContent = s.wins;
+    document.getElementById('l').textContent = s.losses;
+  };
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'w') act('win'); else if (k === 'l') act('loss'); else if (k === 'u') act('undo');
+  });
+</script>
+</body>
+</html>

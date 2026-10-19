@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>FUT Champions Overlay</title>
+<style>
+  :root { --green:#1f6b35; --glow:rgba(31,107,53,.9); }
+  html, body { margin:0; background:transparent; font-family:"Segoe UI",Helvetica,Arial,sans-serif; }
+  .wrap { display:inline-flex; align-items:center; gap:18px; padding:30px; }
+  .box { width:110px; height:110px; display:flex; align-items:center; justify-content:center;
+         background:var(--green); border-radius:10px; color:#fff; font-size:64px; font-weight:800;
+         box-shadow:0 0 14px 2px var(--glow), 0 0 32px 6px rgba(31,107,53,.45);
+         animation:pulse 15s infinite; }
+  .minus { width:28px; height:6px; border-radius:3px; background:var(--green); box-shadow:0 0 10px var(--glow); }
+  /* still for most of the 15 seconds, then one soft pulse */
+  @keyframes pulse {
+    0%, 90%, 100% { transform:scale(1); box-shadow:0 0 14px 2px var(--glow), 0 0 32px 6px rgba(31,107,53,.45); }
+    95% { transform:scale(1.06); box-shadow:0 0 20px 5px var(--glow), 0 0 46px 12px rgba(31,107,53,.6); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="box" id="w">0</div>
+  <div class="minus"></div>
+  <div class="box" id="l">0</div>
+</div>
+<script>
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const $ = id => document.getElementById(id);
+  new EventSource(BASE + '/events').onmessage = e => {
+    const s = JSON.parse(e.data);
+    $('w').textContent = s.wins; $('l').textContent = s.losses;
+  };
+</script>
+</body>
+</html>
