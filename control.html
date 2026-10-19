@@ -11,6 +11,14 @@
   button { font-size:22px; font-weight:700; padding:18px 0; border:0; border-radius:10px; color:#0a0e1c; cursor:pointer; }
   .win { background:#2ee59d; } .loss { background:#ff4d6d; }
   .small { grid-column:span 1; font-size:14px; padding:10px 0; background:#3a4066; color:#fff; font-weight:600; }
+  .set { margin-top:14px; padding-top:12px; border-top:1px solid #2c3253; }
+  .set h2 { margin:0 0 8px; font-size:13px; letter-spacing:1px; text-transform:uppercase; opacity:.7; font-weight:600; }
+  .set .fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .set label { font-size:12px; opacity:.8; display:block; margin-bottom:4px; }
+  .set input { width:100%; box-sizing:border-box; font-size:22px; font-weight:700; text-align:center; padding:8px 0;
+               border:2px solid #3a4066; border-radius:8px; background:#0e1120; color:#fff; }
+  .set input:focus { outline:none; border-color:#2ee59d; }
+  .set button { width:100%; margin-top:10px; font-size:15px; padding:11px 0; background:#2ee59d; }
   .hint { margin-top:10px; font-size:12px; opacity:.55; }
 </style>
 </head>
@@ -22,25 +30,50 @@
   <button class="small" onclick="act('undo')">Undo (U)</button>
   <button class="small" onclick="if(confirm('Reset for a new run?'))act('reset')">New run / Reset</button>
 </div>
+<div class="set">
+  <h2>Set value</h2>
+  <div class="fields">
+    <div><label for="sw">Wins</label><input id="sw" type="number" min="0" max="999" inputmode="numeric"></div>
+    <div><label for="sl">Losses</label><input id="sl" type="number" min="0" max="999" inputmode="numeric"></div>
+  </div>
+  <button onclick="setValues()">Set</button>
+</div>
 <div class="hint">Keys: W = win, L = loss, U = undo</div>
 <script>
   const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
   const getPw = () => { try { return localStorage.getItem('pw') || ''; } catch { return ''; } };
-  async function act(a) {
-    const r = await fetch(BASE + '/api/' + a, { method: 'POST', headers: { 'x-password': getPw() } });
+  async function act(a, query = '') {
+    const r = await fetch(BASE + '/api/' + a + query, { method: 'POST', headers: { 'x-password': getPw() } });
     if (r.status === 401) {
       const pw = prompt('Control password:');
       if (pw === null) return;
       try { localStorage.setItem('pw', pw); } catch {}
-      return act(a);
+      return act(a, query);
     }
   }
   new EventSource(BASE + '/events').onmessage = e => {
     const s = JSON.parse(e.data);
     document.getElementById('w').textContent = s.wins;
     document.getElementById('l').textContent = s.losses;
+    // keep the inputs in sync, but never overwrite what is being typed
+    for (const [id, v] of [['sw', s.wins], ['sl', s.losses]]) {
+      const input = document.getElementById(id);
+      if (document.activeElement !== input) input.value = v;
+    }
   };
+  function setValues() {
+    const w = document.getElementById('sw').value, l = document.getElementById('sl').value;
+    const q = new URLSearchParams();
+    if (w !== '') q.set('wins', w);
+    if (l !== '') q.set('losses', l);
+    act('set', '?' + q);
+    document.activeElement.blur();
+  }
+  for (const id of ['sw', 'sl']) {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') setValues(); });
+  }
   addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return; // typing a value, not a hotkey
     const k = e.key.toLowerCase();
     if (k === 'w') act('win'); else if (k === 'l') act('loss'); else if (k === 'u') act('undo');
   });

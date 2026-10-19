@@ -26,12 +26,23 @@ const actions = {
     if (last === 'L') state.losses = Math.max(0, state.losses - 1);
   },
   reset: () => { state = { wins: 0, losses: 0, history: [] }; },
+  // set exact values, e.g. POST /api/set?wins=5&losses=2 (a missing value is left unchanged)
+  set: params => {
+    const num = (key, fallback) => {
+      const v = parseInt(params.get(key), 10);
+      return Number.isFinite(v) ? Math.min(Math.max(v, 0), 999) : fallback;
+    };
+    state.wins = num('wins', state.wins);
+    state.losses = num('losses', state.losses);
+    // history only drives "undo", so rebuild it to match the new totals
+    state.history = ['W'.repeat(state.wins), 'L'.repeat(state.losses)].join('').split('');
+  },
 };
 
 const pages = { '/': 'overlay.html', '/control': 'control.html' };
 
 http.createServer((req, res) => {
-  const url = req.url.split('?')[0];
+  const [url, query = ''] = req.url.split('?');
   res.setHeader('Access-Control-Allow-Origin', '*'); // lets pages opened from disk (file://) talk to the server
   res.setHeader('Access-Control-Allow-Headers', 'x-password');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
@@ -48,7 +59,7 @@ http.createServer((req, res) => {
     if (PASSWORD && req.headers['x-password'] !== PASSWORD) { res.writeHead(401); return res.end(); }
     const act = url === '/api/check' ? () => {} : actions[url.slice(5)];
     if (!act) { res.writeHead(404); return res.end(); }
-    act(); save(); broadcast();
+    act(new URLSearchParams(query)); save(); broadcast();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(payload());
   }
