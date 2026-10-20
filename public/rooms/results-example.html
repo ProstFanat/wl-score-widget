@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071019">
+<title>Champions Results Example</title>
+<style>
+  :root { color-scheme:dark; --cyan:#78e6df; --gold:#e8c77e; }
+  * { box-sizing:border-box; }
+  body { min-height:100vh; margin:0; padding:30px 18px; background:radial-gradient(ellipse at 50% -10%,#18303a 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  main { width:min(850px,100%); margin:0 auto; }
+  .back { color:#9beee7; font-size:12px; text-decoration:none; }
+  .eyebrow { margin-top:24px; color:var(--cyan); font-size:10px; font-weight:850; letter-spacing:2px; }
+  h1 { margin:7px 0; color:#fff0c4; font-size:clamp(26px,5vw,38px); }
+  .intro { max-width:620px; margin:0; color:#aab9be; font-size:13px; line-height:1.6; }
+  .demo { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; margin-top:26px; }
+  .demo-card { min-width:0; padding:17px; border:1px solid rgba(120,230,223,.25); border-radius:14px; background:rgba(8,19,28,.68); }
+  h2 { margin:0 0 14px; color:#d7e6e4; font-size:12px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; }
+  .widget-frame { display:block; width:100%; height:120px; border:0; background:transparent; }
+  .results-frame { display:block; width:100%; height:450px; border:0; background:transparent; }
+  .caption { margin:12px 0 0; color:#81949b; font-size:11px; line-height:1.5; }
+  @media (max-width:650px) { .demo { grid-template-columns:1fr; } .widget-frame { height:100px; } .results-frame { height:420px; } }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="/">← Scoreboard Studio</a>
+  <div class="eyebrow">SAMPLE DATA · NO SCOREBOARD REQUIRED</div>
+  <h1>Champions results widget</h1>
+  <p class="intro">A local sample shows how the current score widget and the vertical Champions history look together. The sample results are loaded from a JSON file and are not saved to any personal scoreboard.</p>
+  <section class="demo" aria-label="Scoreboard and saved results examples">
+    <article class="demo-card">
+      <h2>Current scoreboard</h2>
+      <iframe class="widget-frame" src="/preview/default" title="Default current scoreboard example"></iframe>
+      <p class="caption">Match-by-match progress belongs to the current run.</p>
+    </article>
+    <article class="demo-card">
+      <h2>Saved results · grouped</h2>
+      <iframe class="results-frame" src="/preview/default/results?group=1" title="Grouped vertical Champions results example"></iframe>
+      <p class="caption">Repeated records are grouped; ungrouped mode shows each of the 15 sample runs separately.</p>
+    </article>
+  </section>
+</main>
+</body>
+</html>

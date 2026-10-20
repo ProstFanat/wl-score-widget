@@ -1,0 +1,19 @@
+{
+  "championsResults": [
+    { "wins": 11, "losses": 4 },
+    { "wins": 13, "losses": 2 },
+    { "wins": 9, "losses": 6 },
+    { "wins": 13, "losses": 2 },
+    { "wins": 12, "losses": 3 },
+    { "wins": 10, "losses": 5 },
+    { "wins": 13, "losses": 2 },
+    { "wins": 8, "losses": 7 },
+    { "wins": 11, "losses": 4 },
+    { "wins": 14, "losses": 1 },
+    { "wins": 9, "losses": 6 },
+    { "wins": 12, "losses": 3 },
+    { "wins": 10, "losses": 5 },
+    { "wins": 13, "losses": 2 },
+    { "wins": 11, "losses": 4 }
+  ]
+}

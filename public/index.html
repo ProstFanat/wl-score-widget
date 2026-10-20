@@ -41,6 +41,8 @@
   .preview-panel[hidden] { display:none; }
   .preview-panel header { margin:0 0 12px; }
   .preview-panel h2 { margin:0; color:#edf3f1; font-size:15px; }
+  .sample-link { display:inline-block; margin-top:12px; color:#9beee7; font-size:11px; font-weight:750; text-decoration:none; }
+  .sample-link:hover { text-decoration:underline; }
   .close-preview { border:0; background:transparent; color:#9beee7; font:700 11px "Segoe UI",Arial,sans-serif; cursor:pointer; }
   .preview-frame { display:block; width:min(100%,600px); height:230px; margin:0 auto; border:0; background:transparent; }
   .personal { display:grid; grid-template-columns:1fr auto; align-items:center; gap:20px; margin-bottom:32px; padding:25px; border:1px solid rgba(120,230,223,.48); border-radius:16px; background:linear-gradient(110deg,rgba(120,230,223,.12),rgba(232,199,126,.07)); box-shadow:0 12px 35px rgba(0,0,0,.16); }
@@ -95,6 +97,7 @@
       <button class="preview" type="button" data-preview="/preview/default" data-title="Default">PREVIEW DEFAULT</button>
     </article>
   </section>
+  <a class="sample-link" href="/example/results">View a combined current-score and vertical-results example ↗</a>
   <section class="preview-panel" id="preview-panel" aria-label="Scoreboard design preview" hidden>
     <header>
       <h2 id="preview-title">Design preview</h2>

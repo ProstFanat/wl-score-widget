@@ -82,6 +82,8 @@ const pages = {
   '/preview/default': 'rooms/overlay.html',
   '/preview/halloween': 'rooms/overlay.html',
   '/preview/champions': 'rooms/overlay.html',
+  '/preview/default/results': 'rooms/overlay.html',
+  '/example/results': 'rooms/results-example.html',
 };
 
 const legacyBoardIds = {
@@ -680,8 +682,17 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'GET' && pages[url]) {
+    if (url === '/preview/default/results') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(fs.readFileSync(path.join(PUBLIC_DIR, pages[url])));
+    }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, pages[url])));
+  }
+
+  if (req.method === 'GET' && url === '/examples/champions-results.json') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'examples/champions-results.json')));
   }
 
   if (req.method === 'GET' && (url === '/bird.png' || url === '/assets/bird.png')) {
