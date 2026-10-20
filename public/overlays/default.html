@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Champions Record Overlay</title>
+<title>Default Score Overlay</title>
 <style>
   :root {
     color-scheme:dark;
@@ -26,6 +26,7 @@
     border-radius:15px;
     background:transparent;
     box-shadow:0 0 16px rgba(120,230,223,.08);
+    animation:border-glow 4s ease-in-out infinite;
   }
   .card::before {
     position:absolute;
@@ -58,7 +59,11 @@
   .segment.win { background:linear-gradient(90deg,var(--cyan),#d4f8e9); box-shadow:0 0 7px rgba(120,230,223,.45); }
   .segment.loss { background:linear-gradient(90deg,#ff626f,#ff9a86); box-shadow:0 0 7px rgba(255,98,111,.55); }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
-  .card.flash { animation:card-flash .55s ease-out; }
+  .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
+  @keyframes border-glow {
+    0%,100% { border-color:rgba(232,199,126,.52); box-shadow:0 0 12px rgba(120,230,223,.06); }
+    50% { border-color:var(--gold-bright); box-shadow:0 0 24px rgba(120,230,223,.24); }
+  }
   @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
   @keyframes card-flash { 45% { filter:brightness(1.55); box-shadow:0 0 32px rgba(120,230,223,.35); } }
   @media (max-width:500px) {
@@ -76,7 +81,7 @@
 </head>
 <body>
 <div class="wrap">
-  <section class="card" id="card" aria-label="Champions wins and losses">
+  <section class="card" id="card" aria-label="Default wins and losses">
     <div class="score-area">
       <div class="scoreline">
         <div class="side">
@@ -143,7 +148,7 @@
     }
     render({ wins:5, losses:4, history:[...'WLWWLWWLL'], max:15 });
   } else {
-    new EventSource(BASE + '/champions/events').onmessage = event => render(JSON.parse(event.data));
+    new EventSource(BASE + '/default/events').onmessage = event => render(JSON.parse(event.data));
   }
 </script>
 </body>

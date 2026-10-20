@@ -8,9 +8,8 @@ const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const STATE_FILE = process.env.STATE_FILE || path.join(__dirname, 'state.json');
 const HALLOWEEN_STATE_FILE = process.env.HALLOWEEN_STATE_FILE || path.join(__dirname, 'halloween-state.json');
-const CHAMPIONS_STATE_FILE = process.env.CHAMPIONS_STATE_FILE || path.join(__dirname, 'champions-state.json');
+const DEFAULT_STATE_FILE = process.env.DEFAULT_STATE_FILE || process.env.CHAMPIONS_STATE_FILE || path.join(__dirname, 'champions-state.json');
 const PASSWORD = process.env.CONTROL_PASSWORD || ''; // empty = no password (local use)
 const MAX_GAMES = 15; // FUT Champions weekend run length; change if the mode differs in FC27
 const pool = process.env.DATABASE_URL
@@ -67,35 +66,41 @@ function createScoreboard(stateFile) {
 }
 
 const scoreboards = {
-  '': createScoreboard(STATE_FILE),
   halloween: createScoreboard(HALLOWEEN_STATE_FILE),
-  champions: createScoreboard(CHAMPIONS_STATE_FILE),
+  default: createScoreboard(DEFAULT_STATE_FILE),
 };
 const pages = {
   '/': 'index.html',
-  '/classic': 'overlays/classic.html',
-  '/control': 'controls/classic.html',
-  '/classic/control': 'controls/classic.html',
   '/halloween': 'overlays/halloween.html',
   '/halloween/control': 'controls/halloween.html',
-  '/champions': 'overlays/champions.html',
-  '/champions/control': 'controls/champions.html',
+  '/default': 'overlays/default.html',
+  '/default/control': 'controls/default.html',
+  '/champions': 'overlays/default.html',
+  '/champions/control': 'controls/default.html',
   '/new': 'rooms/create.html',
   '/find-room': 'rooms/find.html',
+  '/preview/default': 'rooms/overlay.html',
+  '/preview/halloween': 'rooms/overlay.html',
+  '/preview/champions': 'rooms/overlay.html',
 };
 
 const legacyBoardIds = {
-  '': 'default',
   halloween: 'halloween',
-  champions: 'champions',
+  default: 'champions',
 };
 const roomClients = new Map();
+const ROOM_THEMES = ['default', 'halloween'];
+
+function roomOverlayLinks(viewId, suffix = '') {
+  return Object.fromEntries(ROOM_THEMES.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
+}
 
 function normalizeBoard(row) {
   return {
     wins: Number(row.wins),
     losses: Number(row.losses),
     history: row.history || [],
+    championsResults: Array.isArray(row.champions_results) ? row.champions_results : [],
     max: MAX_GAMES,
     ...(row.name ? { name: row.name } : {}),
   };
@@ -125,11 +130,13 @@ async function initializeDatabase() {
       wins INTEGER NOT NULL DEFAULT 0 CHECK (wins >= 0),
       losses INTEGER NOT NULL DEFAULT 0 CHECK (losses >= 0),
       history TEXT[] NOT NULL DEFAULT '{}',
+      champions_results JSONB NOT NULL DEFAULT '[]'::jsonb,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
   await pool.query('ALTER TABLE scoreboards ADD COLUMN IF NOT EXISTS password_salt TEXT');
   await pool.query('ALTER TABLE scoreboards ADD COLUMN IF NOT EXISTS password_hash TEXT');
+  await pool.query("ALTER TABLE scoreboards ADD COLUMN IF NOT EXISTS champions_results JSONB NOT NULL DEFAULT '[]'::jsonb");
 
   for (const [slug, fileBoard] of Object.entries(scoreboards)) {
     const boardId = legacyBoardIds[slug];
@@ -149,7 +156,7 @@ async function getBoard(boardId) {
     return localBoard ? JSON.parse(scoreboards[localBoard[0]].payload()) : null;
   }
   const { rows } = await pool.query(
-    'SELECT wins, losses, history, name FROM scoreboards WHERE id = $1',
+    'SELECT wins, losses, history, champions_results, name FROM scoreboards WHERE id = $1',
     [boardId],
   );
   return rows[0] ? normalizeBoard(rows[0]) : null;
@@ -190,7 +197,7 @@ async function applyDatabaseAction(boardId, action, params) {
   try {
     await client.query('BEGIN');
     const result = await client.query(
-      'SELECT wins, losses, history, name FROM scoreboards WHERE id = $1 FOR UPDATE',
+      'SELECT wins, losses, history, champions_results, name FROM scoreboards WHERE id = $1 FOR UPDATE',
       [boardId],
     );
     if (!result.rows[0]) {
@@ -206,6 +213,46 @@ async function applyDatabaseAction(boardId, action, params) {
     await client.query(
       'UPDATE scoreboards SET wins = $2, losses = $3, history = $4 WHERE id = $1',
       [boardId, updated.wins, updated.losses, updated.history],
+    );
+    await client.query('COMMIT');
+    return updated;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function addChampionsResult(boardId) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      'SELECT wins, losses, history, champions_results, name FROM scoreboards WHERE id = $1 FOR UPDATE',
+      [boardId],
+    );
+    if (!result.rows[0]) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    const current = normalizeBoard(result.rows[0]);
+    if (current.wins + current.losses === 0) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+    current.championsResults.push({
+      wins: current.wins,
+      losses: current.losses,
+      history: [...current.history],
+    });
+    current.championsResults = current.championsResults.slice(-15);
+    const updated = { ...current, wins:0, losses:0, history:[] };
+    await client.query(
+      `UPDATE scoreboards
+       SET wins = 0, losses = 0, history = '{}', champions_results = $2
+       WHERE id = $1`,
+      [boardId, JSON.stringify(updated.championsResults)],
     );
     await client.query('COMMIT');
     return updated;
@@ -313,14 +360,14 @@ async function handleRequest(req, res) {
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
   if (req.method === 'GET' && url === '/events') {
-    const state = await getBoard('default');
-    return state ? subscribeToBoard(req, res, 'default', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
+    const state = await getBoard('champions');
+    return state ? subscribeToBoard(req, res, 'champions', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
   }
   if (req.method === 'GET' && url === '/halloween/events') {
     const state = await getBoard('halloween');
     return state ? subscribeToBoard(req, res, 'halloween', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
   }
-  if (req.method === 'GET' && url === '/champions/events') {
+  if (req.method === 'GET' && (url === '/default/events' || url === '/champions/events')) {
     const state = await getBoard('champions');
     return state ? subscribeToBoard(req, res, 'champions', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
   }
@@ -338,7 +385,7 @@ async function handleRequest(req, res) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const hash = crypto.createHash('sha256').update(roomDetails[1]).digest('hex');
     const { rows } = await pool.query(
-      'SELECT id, view_id, name, wins, losses, history, password_salt, password_hash FROM scoreboards WHERE control_hash = $1',
+      'SELECT id, view_id, name, wins, losses, history, champions_results, password_salt, password_hash FROM scoreboards WHERE control_hash = $1',
       [hash],
     );
     if (!rows[0]) return publicError(res, 401, 'Invalid control link');
@@ -349,11 +396,8 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, {
       ...normalizeBoard(rows[0]),
       viewId: rows[0].view_id,
-      overlays: {
-        classic: `/room/${rows[0].view_id}/classic`,
-        halloween: `/room/${rows[0].view_id}/halloween`,
-        champions: `/room/${rows[0].view_id}/champions`,
-      },
+      overlays: roomOverlayLinks(rows[0].view_id),
+      resultOverlays: roomOverlayLinks(rows[0].view_id, '/results'),
     });
   }
 
@@ -427,11 +471,7 @@ async function handleRequest(req, res) {
     return sendJson(res, 201, {
       name,
       controlUrl: `/manage/${controlToken}`,
-      overlays: {
-        classic: `/room/${viewId}/classic`,
-        halloween: `/room/${viewId}/halloween`,
-        champions: `/room/${viewId}/champions`,
-      },
+      overlays: roomOverlayLinks(viewId),
     });
   }
 
@@ -480,12 +520,18 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/control.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(classic|halloween|champions)$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions)(?:\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const boardId = `room:${roomRoute[1]}`;
     const state = await getBoard(boardId);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/overlay.html')));
+  }
+
+  const overlayPreviewRoute = url.match(/^\/(default|halloween|champions)$/);
+  if (req.method === 'GET' && overlayPreviewRoute && new URLSearchParams(query).get('preview') === '1') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/overlay.html')));
   }
@@ -505,11 +551,27 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, state);
   }
 
+  const roomChampionsResult = url.match(/^\/api\/rooms\/([a-f0-9]{64})\/champions-result$/);
+  if (req.method === 'POST' && roomChampionsResult) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const hash = crypto.createHash('sha256').update(roomChampionsResult[1]).digest('hex');
+    const { rows } = await pool.query('SELECT id, password_salt, password_hash FROM scoreboards WHERE control_hash = $1', [hash]);
+    if (!rows[0] || !rows[0].password_hash) return publicError(res, 401, 'Invalid control link');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    const state = await addChampionsResult(rows[0].id);
+    if (state === false) return publicError(res, 400, 'Record at least one win or loss before adding a Champions result');
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(rows[0].id, state);
+    return sendJson(res, 200, state);
+  }
+
   const roomViewDetails = url.match(/^\/api\/rooms\/by-view\/([a-f0-9]{32})$/);
   if (req.method === 'GET' && roomViewDetails) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const { rows } = await pool.query(
-      'SELECT id, view_id, name, wins, losses, history, password_salt, password_hash FROM scoreboards WHERE view_id = $1',
+      'SELECT id, view_id, name, wins, losses, history, champions_results, password_salt, password_hash FROM scoreboards WHERE view_id = $1',
       [roomViewDetails[1]],
     );
     if (!rows[0]) return publicError(res, 404, 'Scoreboard not found');
@@ -520,11 +582,8 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, {
       ...normalizeBoard(rows[0]),
       viewId: rows[0].view_id,
-      overlays: {
-        classic: `/room/${rows[0].view_id}/classic`,
-        halloween: `/room/${rows[0].view_id}/halloween`,
-        champions: `/room/${rows[0].view_id}/champions`,
-      },
+      overlays: roomOverlayLinks(rows[0].view_id),
+      resultOverlays: roomOverlayLinks(rows[0].view_id, '/results'),
     });
   }
 
@@ -546,10 +605,29 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, state);
   }
 
-  const legacyApi = url.match(/^\/api\/(?:(halloween|champions)\/)?(win|loss|undo|reset|set|check)$/);
+  const roomViewChampionsResult = url.match(/^\/api\/rooms\/by-view\/([a-f0-9]{32})\/champions-result$/);
+  if (req.method === 'POST' && roomViewChampionsResult) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const { rows } = await pool.query(
+      'SELECT id, password_salt, password_hash FROM scoreboards WHERE view_id = $1',
+      [roomViewChampionsResult[1]],
+    );
+    if (!rows[0]) return publicError(res, 404, 'Scoreboard not found');
+    if (!rows[0].password_hash) return publicError(res, 428, 'This older scoreboard has no password. Open its saved private control link to set one.');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    const state = await addChampionsResult(rows[0].id);
+    if (state === false) return publicError(res, 400, 'Record at least one win or loss before adding a Champions result');
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(rows[0].id, state);
+    return sendJson(res, 200, state);
+  }
+
+  const legacyApi = url.match(/^\/api\/(?:(halloween|default|champions)\/)?(win|loss|undo|reset|set|check)$/);
   if (req.method === 'POST' && legacyApi) {
     if (PASSWORD && req.headers['x-password'] !== PASSWORD) { res.writeHead(401); return res.end(); }
-    const slug = legacyApi[1] || '';
+    const slug = legacyApi[1] === 'champions' ? 'default' : legacyApi[1] || 'default';
     const boardId = legacyBoardIds[slug];
     const state = await applyAction(boardId, legacyApi[2], new URLSearchParams(query));
     if (!state) return publicError(res, 404, 'Scoreboard not found');
@@ -585,12 +663,10 @@ async function start() {
     });
   }).listen(PORT, () => {
     console.log(`Widget selector: http://localhost:${PORT}/`);
-    console.log(`Classic overlay (OBS Browser Source): http://localhost:${PORT}/classic`);
-    console.log(`Control panel (OBS Dock/browser): http://localhost:${PORT}/control`);
     console.log(`Halloween overlay: http://localhost:${PORT}/halloween`);
     console.log(`Halloween control panel: http://localhost:${PORT}/halloween/control`);
-    console.log(`Champions overlay: http://localhost:${PORT}/champions`);
-    console.log(`Champions control panel: http://localhost:${PORT}/champions/control`);
+    console.log(`Default overlay: http://localhost:${PORT}/default`);
+    console.log(`Default control panel: http://localhost:${PORT}/default/control`);
     console.log(`Create a personal scoreboard: http://localhost:${PORT}/new`);
   });
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Champions Score Control</title>
+<title>Default Score Control</title>
 <style>
   :root { color-scheme:dark; --gold:#e8c77e; --cyan:#78e6df; }
   * { box-sizing:border-box; }
@@ -51,7 +51,7 @@
         <path d="M14 18h3v4h-3zM31 18h3v4h-3z" fill="#E8C77E"/>
       </svg>
     </div>
-    <div><h1>CHAMPIONS</h1><p class="subtitle">WEEKEND LEAGUE CONTROL</p></div>
+    <div><h1>DEFAULT</h1><p class="subtitle">SCORE CONTROL</p></div>
   </header>
   <section class="score" aria-label="Current record" aria-live="polite">
     <div><div class="score-value" id="w">0</div><div class="score-label">WINS</div></div>
@@ -62,7 +62,7 @@
     <button class="win" onclick="runAction('win')">+ WIN&nbsp; (W)</button>
     <button class="loss-button" onclick="runAction('loss')">+ LOSS&nbsp; (L)</button>
     <button class="utility" onclick="runAction('undo')">Undo last&nbsp; (U)</button>
-    <button class="utility" onclick="if(confirm('Reset the Champions record?'))runAction('reset')">Reset run</button>
+    <button class="utility" onclick="if(confirm('Reset the default record?'))runAction('reset')">Reset run</button>
   </div>
   <section class="section">
     <h2 class="section-title">Set record manually</h2>
@@ -79,7 +79,7 @@
   const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
   const getPw = () => { try { return localStorage.getItem('pw') || ''; } catch { return ''; } };
   async function act(action, query = '') {
-    const response = await fetch(BASE + '/api/champions/' + action + query, {
+    const response = await fetch(BASE + '/api/default/' + action + query, {
       method:'POST',
       headers:{ 'x-password':getPw() }
     });
@@ -97,7 +97,7 @@
       document.getElementById('error').textContent = `Could not update score: ${error.message}`;
     });
   }
-  new EventSource(BASE + '/champions/events').onmessage = event => {
+  new EventSource(BASE + '/default/events').onmessage = event => {
     const state = JSON.parse(event.data);
     document.getElementById('w').textContent = state.wins;
     document.getElementById('l').textContent = state.losses;

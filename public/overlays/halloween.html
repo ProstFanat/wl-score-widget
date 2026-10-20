@@ -25,6 +25,7 @@
     border-radius:15px;
     background:transparent;
     box-shadow:0 0 18px rgba(255,105,26,.12);
+    animation:border-glow 4s ease-in-out infinite;
   }
   .card::before {
     position:absolute;
@@ -64,7 +65,11 @@
   .segment.win { background:linear-gradient(90deg,#ff9c45,#ffe0a6); box-shadow:0 0 7px rgba(255,135,51,.55); }
   .segment.loss { background:linear-gradient(90deg,#b766ff,#f0b6ff); box-shadow:0 0 7px rgba(189,131,255,.55); }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
-  .card.flash { animation:card-flash .55s ease-out; }
+  .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
+  @keyframes border-glow {
+    0%,100% { border-color:rgba(255,135,51,.52); box-shadow:0 0 12px rgba(255,105,26,.08); }
+    50% { border-color:#ffb14b; box-shadow:0 0 24px rgba(255,135,51,.4); }
+  }
   @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
   @keyframes card-flash { 45% { filter:brightness(1.65); box-shadow:0 0 34px rgba(255,119,44,.4); } }
   @keyframes haunt { 0%,100% { transform:rotate(0) translateY(0); } 45% { transform:rotate(-4deg) translateY(-2px); } 70% { transform:rotate(3deg) translateY(1px); } }

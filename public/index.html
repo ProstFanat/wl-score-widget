@@ -24,13 +24,13 @@
   .section-head { display:flex; align-items:end; justify-content:space-between; gap:15px; margin:28px 0 13px; }
   .section-head h2 { margin:0; color:#edf3f1; font-size:17px; letter-spacing:.2px; }
   .section-head p { margin:0; color:var(--muted); font-size:11px; }
-  .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
   .widget { --accent:var(--cyan); --accent-glow:rgba(120,230,223,.1); position:relative; display:flex; min-height:206px; flex-direction:column; overflow:hidden; padding:18px; border:1px solid rgba(120,230,223,.32); border-radius:14px; background:linear-gradient(145deg,rgba(17,37,47,.84),rgba(8,19,28,.78)); box-shadow:inset 0 1px rgba(255,255,255,.035); }
   .widget::after { position:absolute; top:0; right:0; left:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent)); content:""; opacity:.8; }
   .widget:hover { border-color:var(--accent); box-shadow:0 9px 25px var(--accent-glow),inset 0 1px rgba(255,255,255,.06); transform:translateY(-2px); }
   .widget { transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
   .widget.halloween { --accent:#ff8733; --accent-glow:rgba(255,135,51,.14); border-color:rgba(255,135,51,.32); }
-  .widget.champions { --accent:var(--gold); --accent-glow:rgba(232,199,126,.13); border-color:rgba(232,199,126,.32); }
+  .widget.default { --accent:var(--gold); --accent-glow:rgba(232,199,126,.13); border-color:rgba(232,199,126,.32); }
   .icon { display:grid; width:42px; height:42px; place-items:center; margin-bottom:14px; border:1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-radius:12px; background:color-mix(in srgb,var(--accent) 10%,transparent); color:var(--accent); font-size:21px; }
   .widget h3 { margin:0 0 6px; color:#f7f7f2; font-size:16px; }
   .widget p { margin:0; color:#9eafb5; font-size:12px; line-height:1.5; }
@@ -42,7 +42,7 @@
   .preview-panel header { margin:0 0 12px; }
   .preview-panel h2 { margin:0; color:#edf3f1; font-size:15px; }
   .close-preview { border:0; background:transparent; color:#9beee7; font:700 11px "Segoe UI",Arial,sans-serif; cursor:pointer; }
-  .preview-frame { display:block; width:min(100%,480px); height:230px; margin:0 auto; border:0; background:transparent; }
+  .preview-frame { display:block; width:min(100%,600px); height:230px; margin:0 auto; border:0; background:transparent; }
   .personal { display:grid; grid-template-columns:1fr auto; align-items:center; gap:20px; margin-bottom:32px; padding:25px; border:1px solid rgba(120,230,223,.48); border-radius:16px; background:linear-gradient(110deg,rgba(120,230,223,.12),rgba(232,199,126,.07)); box-shadow:0 12px 35px rgba(0,0,0,.16); }
   .personal h2 { margin:0 0 6px; color:#e8fffb; font-size:18px; }
   .personal p { max-width:570px; margin:0; color:#aab9be; font-size:12px; line-height:1.55; }
@@ -82,23 +82,17 @@
     <p>These are demos only; create a personal scoreboard to track your own score.</p>
   </div>
   <section class="grid" aria-label="Available scoreboard widgets">
-    <article class="widget classic">
-      <div class="icon" aria-hidden="true">↗</div>
-      <h3>Classic</h3>
-      <p>Clean, minimal wins and losses with a live 15-match progress strip.</p>
-      <button class="preview" type="button" data-preview="/classic?preview=1" data-title="Classic">PREVIEW CLASSIC</button>
-    </article>
     <article class="widget halloween">
       <div class="icon" aria-hidden="true">♨</div>
       <h3>Halloween Night League</h3>
       <p>Glowing jack-o’-lantern, eerie accents, and a spooky match history.</p>
-      <button class="preview" type="button" data-preview="/halloween?preview=1" data-title="Halloween">PREVIEW HALLOWEEN</button>
+      <button class="preview" type="button" data-preview="/preview/halloween" data-title="Halloween">PREVIEW HALLOWEEN</button>
     </article>
-    <article class="widget champions">
+    <article class="widget default">
       <div class="icon" aria-hidden="true">✦</div>
-      <h3>Champions</h3>
+      <h3>Default</h3>
       <p>Premium broadcast-inspired styling with clear, ordered match results.</p>
-      <button class="preview" type="button" data-preview="/champions?preview=1" data-title="Champions">PREVIEW CHAMPIONS</button>
+      <button class="preview" type="button" data-preview="/preview/default" data-title="Default">PREVIEW DEFAULT</button>
     </article>
   </section>
   <section class="preview-panel" id="preview-panel" aria-label="Scoreboard design preview" hidden>

@@ -25,6 +25,7 @@
     border-radius:15px;
     background:transparent;
     box-shadow:0 0 18px color-mix(in srgb,var(--accent) 13%,transparent);
+    animation:border-glow 4s ease-in-out infinite;
   }
   .card::before { position:absolute; inset:5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
   .card::after { position:absolute; top:0; right:0; width:45%; height:2px; background:linear-gradient(90deg,transparent,var(--second),var(--accent)); content:""; }
@@ -43,9 +44,23 @@
   .card.halloween { --accent:#bd83ff; --accent-soft:#f0b6ff; --second:#ffbd75; --muted:#b1a0bd; }
   .card.halloween .pumpkin { display:block; }
   .card.halloween .separator { color:#ff9a52; }
-  .card.classic { --accent:#48d877; --accent-soft:#a7ffc1; --second:#f1f7ed; --muted:#a3b5a5; }
+  .card.results { width:min(320px,calc(100vw - 24px)); padding:13px 15px; }
+  .result-list { position:relative; display:flex; flex-direction:column; gap:8px; }
+  .result-row { display:grid; grid-template-columns:35px 1fr; align-items:center; gap:10px; padding:7px 8px; border:1px solid color-mix(in srgb,var(--accent) 32%,transparent); border-radius:9px; background:rgba(255,255,255,.025); }
+  .result-index { color:var(--muted); font-size:10px; font-weight:800; text-align:center; }
+  .result-content { min-width:0; }
+  .result-score { display:flex; align-items:baseline; gap:7px; font-size:19px; font-weight:850; line-height:1; }
+  .result-wins { color:var(--accent-soft); }
+  .result-losses { color:#ff7c83; }
+  .result-dash { color:var(--muted); font-size:14px; }
+  .result-segments { display:grid; grid-template-columns:repeat(15,1fr); gap:3px; margin-top:6px; }
+  .result-segments .segment { height:2px; }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
-  .card.flash { animation:card-flash .55s ease-out; }
+  .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
+  @keyframes border-glow {
+    0%,100% { border-color:color-mix(in srgb,var(--accent) 58%,transparent); box-shadow:0 0 12px color-mix(in srgb,var(--accent) 10%,transparent); }
+    50% { border-color:var(--accent); box-shadow:0 0 23px color-mix(in srgb,var(--accent) 34%,transparent); }
+  }
   @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
   @keyframes card-flash { 45% { filter:brightness(1.6); box-shadow:0 0 34px color-mix(in srgb,var(--accent) 42%,transparent); } }
   @keyframes haunt { 0%,100% { transform:rotate(0) translateY(0); } 45% { transform:rotate(-4deg) translateY(-2px); } 70% { transform:rotate(3deg) translateY(1px); } }
@@ -64,7 +79,7 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="Personal wins and losses">
-    <div class="scoreline">
+    <div class="scoreline" id="scoreline">
       <div class="side"><span class="number" id="w">0</span></div>
       <span class="separator" id="separator">—<svg class="pumpkin" viewBox="0 0 64 56" role="img" aria-label="Glowing jack-o'-lantern">
         <defs>
@@ -83,21 +98,29 @@
       </svg></span>
       <div class="side loss"><span class="number" id="l">0</span></div>
     </div>
-    <div class="progress-row">
+    <div class="progress-row" id="progress-row">
       <div class="segments" id="segments" aria-label="Match result history"></div>
     </div>
+    <div class="result-list" id="result-list" hidden></div>
   </section>
 </div>
 <script>
   const pathParts = location.pathname.split('/');
-  const viewId = pathParts[2];
-  const theme = pathParts[3];
+  const isPreview = pathParts[1] === 'preview' || new URLSearchParams(location.search).get('preview') === '1';
+  const viewId = isPreview ? null : pathParts[2];
+  const requestedTheme = pathParts[1] === 'preview' ? pathParts[2] : isPreview ? pathParts[1] : pathParts[3];
+  const theme = requestedTheme === 'champions' ? 'default' : requestedTheme;
+  const isResults = !isPreview && pathParts[4] === 'results';
   const card = document.getElementById('card');
   card.classList.add(theme);
+  if (isResults) {
+    card.classList.add('results');
+    document.getElementById('scoreline').hidden = true;
+    document.getElementById('progress-row').hidden = true;
+    document.getElementById('result-list').hidden = false;
+  }
   if (theme === 'halloween') {
     document.getElementById('separator').firstChild.textContent = '';
-  } else {
-    card.classList.add('classic');
   }
 
   const segments = document.getElementById('segments');
@@ -121,8 +144,12 @@
     card.classList.add('flash');
   }
 
-  new EventSource(`/room/${viewId}/events`).onmessage = event => {
-    const state = JSON.parse(event.data);
+  function render(state) {
+    if (isResults) {
+      renderResults(state.championsResults);
+      first = false;
+      return;
+    }
     updateScore('w', state.wins);
     updateScore('l', state.losses);
     const total = state.wins + state.losses;
@@ -136,7 +163,54 @@
       segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
     });
     first = false;
-  };
+  }
+
+  function renderResults(results) {
+    const list = document.getElementById('result-list');
+    list.replaceChildren();
+    if (!Array.isArray(results)) return;
+    [...results].slice(-15).reverse().forEach((result, index) => {
+      const row = document.createElement('div');
+      row.className = 'result-row';
+      const number = document.createElement('span');
+      number.className = 'result-index';
+      number.textContent = String(index + 1).padStart(2, '0');
+      const content = document.createElement('div');
+      content.className = 'result-content';
+      const score = document.createElement('div');
+      score.className = 'result-score';
+      const wins = document.createElement('span');
+      wins.className = 'result-wins';
+      wins.textContent = result.wins;
+      const dash = document.createElement('span');
+      dash.className = 'result-dash';
+      dash.textContent = '—';
+      const losses = document.createElement('span');
+      losses.className = 'result-losses';
+      losses.textContent = result.losses;
+      score.append(wins, dash, losses);
+      const resultSegments = document.createElement('div');
+      resultSegments.className = 'result-segments';
+      const total = Number(result.wins) + Number(result.losses);
+      const history = Array.isArray(result.history) && result.history.length === total
+        ? result.history
+        : [...'W'.repeat(Number(result.wins)), ...'L'.repeat(Number(result.losses))];
+      for (let i = 0; i < 15; i++) {
+        const segment = document.createElement('span');
+        segment.className = `segment${history[i] === 'W' ? ' win' : history[i] === 'L' ? ' loss' : ''}`;
+        resultSegments.appendChild(segment);
+      }
+      content.append(score, resultSegments);
+      row.append(number, content);
+      list.appendChild(row);
+    });
+  }
+
+  if (isPreview) {
+    render({ wins:5, losses:4, history:[...'WLWWLWWLL'], max:15, championsResults:[] });
+  } else {
+    new EventSource(`/room/${viewId}/events`).onmessage = event => render(JSON.parse(event.data));
+  }
 </script>
 </body>
 </html>
