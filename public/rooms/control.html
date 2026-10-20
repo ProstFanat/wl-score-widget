@@ -30,6 +30,8 @@
   .utility { color:#dce6e7; background:#20313b; font-size:12px; font-weight:700; }
   .champions-result { margin-top:10px; color:#102029; background:linear-gradient(135deg,#a3f0e8,#53c6c0); }
   .champions-result:disabled { opacity:.45; cursor:not-allowed; }
+  .clear-results { margin-top:9px; color:#ffd0c8; background:#39232a; }
+  .clear-results:disabled { opacity:.45; cursor:not-allowed; }
   .section { margin-top:20px; padding-top:17px; border-top:1px solid rgba(255,255,255,.09); }
   .section-title { margin:0 0 11px; color:#c3cfd0; font-size:10px; font-weight:800; letter-spacing:1.7px; text-transform:uppercase; }
   .fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -43,6 +45,16 @@
   .hint { margin:14px 0 0; color:#81949b; font-size:11px; text-align:center; }
   .home-link { display:inline-block; margin-bottom:14px; color:#9beee7; font-size:11px; text-decoration:none; }
   .home-link:hover { text-decoration:underline; }
+  .group-option { display:flex; align-items:center; gap:9px; margin:12px 0; color:#c3cfd0; font-size:12px; font-weight:700; }
+  .group-option input { width:17px; height:17px; margin:0; accent-color:var(--cyan); }
+  dialog { width:min(360px,calc(100% - 32px)); padding:22px; border:1px solid rgba(255,120,130,.48); border-radius:15px; background:#101f29; color:#f7f7f2; box-shadow:0 20px 60px rgba(0,0,0,.55); }
+  dialog::backdrop { background:rgba(2,8,13,.78); backdrop-filter:blur(3px); }
+  dialog h2 { margin:0 0 9px; color:#fff0c4; font-size:17px; }
+  dialog p { margin:0; color:#aab9be; font-size:12px; line-height:1.55; }
+  .dialog-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:20px; }
+  .dialog-actions button { width:auto; min-width:100px; min-height:40px; padding:0 12px; font-size:12px; }
+  .dialog-cancel { color:#dce6e7; background:#20313b; }
+  .dialog-confirm { color:#fff; background:#a63f49; }
 </style>
 </head>
 <body>
@@ -76,6 +88,7 @@
     <h2 class="section-title">Champions weekend results</h2>
     <button class="champions-result" id="add-result" onclick="saveChampionsResult()" disabled>Add Champions result</button>
     <p class="hint">Save this run to the vertical results widgets and reset the active score. The latest 15 runs are kept.</p>
+    <button class="clear-results" id="clear-results" type="button" onclick="document.getElementById('clear-dialog').showModal()">Clear saved results</button>
   </section>
   <section class="section">
     <h2 class="section-title">Set record manually</h2>
@@ -87,6 +100,14 @@
   </section>
   <nav class="links" id="links"></nav>
   </div>
+  <dialog id="clear-dialog" aria-labelledby="clear-dialog-title">
+    <h2 id="clear-dialog-title">Clear saved results?</h2>
+    <p>This permanently removes all saved Champions results for this scoreboard. Your current active score will not be changed.</p>
+    <div class="dialog-actions">
+      <button class="dialog-cancel" type="button" onclick="document.getElementById('clear-dialog').close()">Cancel</button>
+      <button class="dialog-confirm" id="confirm-clear-results" type="button" onclick="clearChampionsResults()">Clear results</button>
+    </div>
+  </dialog>
   <p class="error" id="error" role="status" aria-live="polite"></p>
   <p class="hint" id="hint" hidden>Keyboard: W = win · L = loss · U = undo</p>
 </main>
@@ -116,27 +137,56 @@
     document.getElementById('w').textContent = state.wins;
     document.getElementById('l').textContent = state.losses;
     document.getElementById('add-result').disabled = state.wins + state.losses === 0;
+    document.getElementById('clear-results').disabled = !Array.isArray(state.championsResults) || state.championsResults.length === 0;
     for (const [id, value] of [['sw', state.wins], ['sl', state.losses]]) {
       const input = document.getElementById(id);
       if (document.activeElement !== input) input.value = value;
     }
-    async function saveChampionsResult() {
-      if (!confirm('Save this Champions result and reset the active score?')) return;
-      const button = document.getElementById('add-result');
-      button.disabled = true;
-      try {
-        const response = await fetch(`${apiBase}/champions-result`, {
-          method:'POST',
-          headers:{ 'x-scoreboard-password':password },
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
-        document.getElementById('error').textContent = '';
-        update(data);
-      } catch (error) {
-        document.getElementById('error').textContent = `Could not save result: ${error.message}`;
-        button.disabled = false;
-      }
+  }
+  async function saveChampionsResult() {
+    if (!confirm('Save this Champions result and reset the active score?')) return;
+    const button = document.getElementById('add-result');
+    button.disabled = true;
+    try {
+      const response = await fetch(`${apiBase}/champions-result`, {
+        method:'POST',
+        headers:{ 'x-scoreboard-password':password },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+      document.getElementById('error').textContent = '';
+      update(data);
+    } catch (error) {
+      document.getElementById('error').textContent = `Could not save result: ${error.message}`;
+      button.disabled = false;
+    }
+  }
+  async function clearChampionsResults() {
+    const button = document.getElementById('confirm-clear-results');
+    button.disabled = true;
+    try {
+      const response = await fetch(`${apiBase}/champions-results/clear`, {
+        method:'POST',
+        headers:{ 'x-scoreboard-password':password },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+      update(data);
+      document.getElementById('clear-dialog').close();
+      document.getElementById('error').textContent = '';
+    } catch (error) {
+      document.getElementById('error').textContent = `Could not clear results: ${error.message}`;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function updateResultLinks() {
+    const group = document.getElementById('group-results').checked;
+    for (const link of document.querySelectorAll('[data-result-theme]')) {
+      const url = new URL(link.dataset.resultUrl, location.origin);
+      if (group) url.searchParams.set('group', '1');
+      link.href = `${url.pathname}${url.search}`;
     }
   }
   function setValues() {
@@ -219,14 +269,24 @@
       resultsHeading.style.marginTop = '16px';
       resultsHeading.textContent = 'Vertical results widgets';
       links.appendChild(resultsHeading);
+      const groupLabel = document.createElement('label');
+      groupLabel.className = 'group-option';
+      const groupCheckbox = document.createElement('input');
+      groupCheckbox.type = 'checkbox';
+      groupCheckbox.id = 'group-results';
+      groupCheckbox.addEventListener('change', updateResultLinks);
+      groupLabel.append(groupCheckbox, document.createTextNode('Group results'));
+      links.appendChild(groupLabel);
       for (const [theme, label] of [['default', 'Default results'], ['halloween', 'Halloween results']]) {
         const link = document.createElement('a');
-        link.href = data.resultOverlays[theme];
+        link.dataset.resultTheme = theme;
+        link.dataset.resultUrl = data.resultOverlays[theme];
         link.textContent = `Open ${label} ↗`;
         link.target = '_blank';
         link.rel = 'noopener';
         links.appendChild(link);
       }
+      updateResultLinks();
       new EventSource(`/room/${data.viewId}/events`).onmessage = event => update(JSON.parse(event.data));
       document.getElementById('unlock-form').hidden = true;
       document.getElementById('controls').hidden = false;

@@ -14,6 +14,7 @@
     --overlay-width:400px;
   }
   html, body { margin:0; background:transparent; color:#fff; font-family:"Segoe UI",Arial,sans-serif; }
+  [hidden] { display:none !important; }
   .wrap { display:inline-block; padding:20px; }
   .card {
     position:relative;
@@ -44,17 +45,18 @@
   .card.halloween { --accent:#bd83ff; --accent-soft:#f0b6ff; --second:#ffbd75; --muted:#b1a0bd; }
   .card.halloween .pumpkin { display:block; }
   .card.halloween .separator { color:#ff9a52; }
-  .card.results { width:min(320px,calc(100vw - 24px)); padding:13px 15px; }
-  .result-list { position:relative; display:flex; flex-direction:column; gap:8px; }
-  .result-row { display:grid; grid-template-columns:35px 1fr; align-items:center; gap:10px; padding:7px 8px; border:1px solid color-mix(in srgb,var(--accent) 32%,transparent); border-radius:9px; background:rgba(255,255,255,.025); }
-  .result-index { color:var(--muted); font-size:10px; font-weight:800; text-align:center; }
-  .result-content { min-width:0; }
-  .result-score { display:flex; align-items:baseline; gap:7px; font-size:19px; font-weight:850; line-height:1; }
+  .card.results { width:min(260px,calc(100vw - 24px)); padding:12px; }
+  .result-list { position:relative; display:flex; flex-direction:column; gap:7px; }
+  .result-row { display:grid; grid-template-columns:27px 1fr; align-items:center; gap:8px; padding:8px; border:1px solid color-mix(in srgb,var(--accent) 32%,transparent); border-radius:9px; background:rgba(255,255,255,.025); }
+  .result-index { display:grid; width:25px; height:25px; place-items:center; border-radius:7px; background:color-mix(in srgb,var(--accent) 10%,transparent); color:var(--muted); font-size:9px; font-weight:850; }
+  .result-content { display:flex; min-width:0; flex-direction:column; gap:6px; }
+  .result-score { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .result-stack { display:grid; grid-template-columns:1fr; gap:3px; }
+  .result-stack-line { display:flex; align-items:baseline; gap:7px; font-size:15px; font-weight:850; line-height:1; }
+  .result-tag { width:10px; color:var(--muted); font-size:8px; font-weight:800; }
   .result-wins { color:var(--accent-soft); }
   .result-losses { color:#ff7c83; }
-  .result-dash { color:var(--muted); font-size:14px; }
-  .result-segments { display:grid; grid-template-columns:repeat(15,1fr); gap:3px; margin-top:6px; }
-  .result-segments .segment { height:2px; }
+  .result-count { padding:4px 7px; border:1px solid color-mix(in srgb,var(--accent) 38%,transparent); border-radius:999px; color:var(--second); font-size:10px; font-weight:850; white-space:nowrap; }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
   .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
   @keyframes border-glow {
@@ -111,6 +113,7 @@
   const requestedTheme = pathParts[1] === 'preview' ? pathParts[2] : isPreview ? pathParts[1] : pathParts[3];
   const theme = requestedTheme === 'champions' ? 'default' : requestedTheme;
   const isResults = !isPreview && pathParts[4] === 'results';
+  const groupResults = new URLSearchParams(location.search).get('group') === '1';
   const card = document.getElementById('card');
   card.classList.add(theme);
   if (isResults) {
@@ -169,7 +172,17 @@
     const list = document.getElementById('result-list');
     list.replaceChildren();
     if (!Array.isArray(results)) return;
-    [...results].slice(-15).reverse().forEach((result, index) => {
+    const recent = [...results].slice(-15).reverse();
+    const displayResults = groupResults
+      ? [...recent.reduce((groups, result) => {
+        const key = `${Number(result.wins)}-${Number(result.losses)}`;
+        const existing = groups.get(key);
+        if (existing) existing.count++;
+        else groups.set(key, { result, count:1 });
+        return groups;
+      }, new Map()).values()]
+      : recent.map(result => ({ result, count:1 }));
+    displayResults.forEach(({ result, count }, index) => {
       const row = document.createElement('div');
       row.className = 'result-row';
       const number = document.createElement('span');
@@ -179,28 +192,30 @@
       content.className = 'result-content';
       const score = document.createElement('div');
       score.className = 'result-score';
+      const stack = document.createElement('div');
+      stack.className = 'result-stack';
       const wins = document.createElement('span');
-      wins.className = 'result-wins';
-      wins.textContent = result.wins;
-      const dash = document.createElement('span');
-      dash.className = 'result-dash';
-      dash.textContent = '—';
+      wins.className = 'result-stack-line result-wins';
+      const winsTag = document.createElement('small');
+      winsTag.className = 'result-tag';
+      winsTag.textContent = 'W';
+      wins.append(winsTag, document.createTextNode(result.wins));
       const losses = document.createElement('span');
-      losses.className = 'result-losses';
-      losses.textContent = result.losses;
-      score.append(wins, dash, losses);
-      const resultSegments = document.createElement('div');
-      resultSegments.className = 'result-segments';
-      const total = Number(result.wins) + Number(result.losses);
-      const history = Array.isArray(result.history) && result.history.length === total
-        ? result.history
-        : [...'W'.repeat(Number(result.wins)), ...'L'.repeat(Number(result.losses))];
-      for (let i = 0; i < 15; i++) {
-        const segment = document.createElement('span');
-        segment.className = `segment${history[i] === 'W' ? ' win' : history[i] === 'L' ? ' loss' : ''}`;
-        resultSegments.appendChild(segment);
+      losses.className = 'result-stack-line result-losses';
+      const lossesTag = document.createElement('small');
+      lossesTag.className = 'result-tag';
+      lossesTag.textContent = 'L';
+      losses.append(lossesTag, document.createTextNode(result.losses));
+      stack.append(wins, losses);
+      score.appendChild(stack);
+      if (count > 1) {
+        const countBadge = document.createElement('span');
+        countBadge.className = 'result-count';
+        countBadge.textContent = `×${count}`;
+        countBadge.title = `${count} runs with this score`;
+        score.appendChild(countBadge);
       }
-      content.append(score, resultSegments);
+      content.appendChild(score);
       row.append(number, content);
       list.appendChild(row);
     });

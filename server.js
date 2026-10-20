@@ -264,6 +264,17 @@ async function addChampionsResult(boardId) {
   }
 }
 
+async function clearChampionsResults(boardId) {
+  const { rows } = await pool.query(
+    `UPDATE scoreboards
+     SET champions_results = '[]'::jsonb
+     WHERE id = $1
+     RETURNING wins, losses, history, champions_results, name`,
+    [boardId],
+  );
+  return rows[0] ? normalizeBoard(rows[0]) : null;
+}
+
 async function applyAction(boardId, action, params) {
   if (pool) return applyDatabaseAction(boardId, action, params);
   const localBoard = Object.entries(legacyBoardIds).find(([, id]) => id === boardId);
@@ -567,6 +578,21 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, state);
   }
 
+  const roomClearChampionsResults = url.match(/^\/api\/rooms\/([a-f0-9]{64})\/champions-results\/clear$/);
+  if (req.method === 'POST' && roomClearChampionsResults) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const hash = crypto.createHash('sha256').update(roomClearChampionsResults[1]).digest('hex');
+    const { rows } = await pool.query('SELECT id, password_salt, password_hash FROM scoreboards WHERE control_hash = $1', [hash]);
+    if (!rows[0] || !rows[0].password_hash) return publicError(res, 401, 'Invalid control link');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    const state = await clearChampionsResults(rows[0].id);
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(rows[0].id, state);
+    return sendJson(res, 200, state);
+  }
+
   const roomViewDetails = url.match(/^\/api\/rooms\/by-view\/([a-f0-9]{32})$/);
   if (req.method === 'GET' && roomViewDetails) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
@@ -619,6 +645,24 @@ async function handleRequest(req, res) {
     }
     const state = await addChampionsResult(rows[0].id);
     if (state === false) return publicError(res, 400, 'Record at least one win or loss before adding a Champions result');
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(rows[0].id, state);
+    return sendJson(res, 200, state);
+  }
+
+  const roomViewClearChampionsResults = url.match(/^\/api\/rooms\/by-view\/([a-f0-9]{32})\/champions-results\/clear$/);
+  if (req.method === 'POST' && roomViewClearChampionsResults) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const { rows } = await pool.query(
+      'SELECT id, password_salt, password_hash FROM scoreboards WHERE view_id = $1',
+      [roomViewClearChampionsResults[1]],
+    );
+    if (!rows[0]) return publicError(res, 404, 'Scoreboard not found');
+    if (!rows[0].password_hash) return publicError(res, 428, 'This older scoreboard has no password. Open its saved private control link to set one.');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    const state = await clearChampionsResults(rows[0].id);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
     sendBoardUpdate(rows[0].id, state);
     return sendJson(res, 200, state);
