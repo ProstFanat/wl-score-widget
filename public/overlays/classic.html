@@ -7,8 +7,6 @@
   :root { --green:#1f6b35; --glow:rgba(31,107,53,.9); }
   html, body { margin:0; background:transparent; font-family:"Segoe UI",Helvetica,Arial,sans-serif; }
   .wrap { display:inline-flex; align-items:center; gap:18px; padding:30px; }
-  .wrap.preview { position:relative; }
-  .preview-label { position:absolute; top:7px; right:30px; color:#9ee5ad; font-size:9px; font-weight:800; letter-spacing:1.5px; }
   .box { box-sizing:border-box; width:110px; height:110px; display:flex; align-items:center; justify-content:center;
          border:4px solid var(--green); border-radius:10px; color:#fff; font-size:64px; font-weight:800;
          box-shadow:0 0 14px 2px var(--glow), inset 0 0 14px 2px var(--glow);
@@ -64,11 +62,13 @@
   }
 
   if (new URLSearchParams(location.search).get('preview') === '1') {
-    const label = document.createElement('span');
-    label.className = 'preview-label';
-    label.textContent = 'DESIGN PREVIEW';
-    document.querySelector('.wrap').classList.add('preview');
-    document.querySelector('.wrap').prepend(label);
+    if (window.self === window.top) {
+      const homeLink = document.createElement('a');
+      homeLink.href = '/';
+      homeLink.style.cssText = 'position:fixed;top:10px;left:12px;color:#9ee5ad;font:700 11px Segoe UI,Arial,sans-serif;text-decoration:none';
+      homeLink.textContent = '← SCOREBOARD STUDIO';
+      document.body.appendChild(homeLink);
+    }
     render({ wins:5, losses:4 });
   } else {
     new EventSource(BASE + '/events').onmessage = e => render(JSON.parse(e.data));

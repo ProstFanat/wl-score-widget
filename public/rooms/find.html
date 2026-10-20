@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071019">
+<title>Find Your Scoreboard</title>
+<style>
+  :root { color-scheme:dark; --gold:#e8c77e; --cyan:#78e6df; }
+  * { box-sizing:border-box; }
+  body { min-height:100vh; margin:0; padding:32px 18px; background:radial-gradient(ellipse at 50% -15%,#18303a 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  main { width:min(520px,100%); margin:0 auto; padding:28px; border:1px solid rgba(120,230,223,.35); border-radius:18px; background:rgba(12,25,34,.92); box-shadow:0 18px 55px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.06); }
+  .eyebrow { color:var(--cyan); font-size:10px; font-weight:800; letter-spacing:2px; }
+  h1 { margin:8px 0; color:#fff0c4; font-size:26px; }
+  .intro { margin:0 0 22px; color:#aab9be; font-size:14px; line-height:1.6; }
+  label { display:block; margin-bottom:7px; color:#c4d0d2; font-size:12px; font-weight:700; }
+  input { width:100%; padding:12px; border:1px solid #354851; border-radius:8px; background:#08131b; color:white; font:600 14px "Segoe UI",Arial,sans-serif; }
+  input:focus { outline:2px solid rgba(120,230,223,.65); border-color:var(--cyan); }
+  button { width:100%; margin-top:13px; padding:13px; border:0; border-radius:9px; color:#102029; background:linear-gradient(135deg,#c9fff4,#78e6df); font:800 14px "Segoe UI",Arial,sans-serif; cursor:pointer; }
+  .help { margin:8px 0 0; color:#81949b; font-size:11px; line-height:1.5; }
+  .message { min-height:18px; margin:12px 0 0; color:#ff9e91; font-size:12px; }
+  .back { display:inline-block; margin-top:17px; color:#9beee7; font-size:12px; text-decoration:none; }
+  .back:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">YOUR STREAM · YOUR SCORE</div>
+  <h1>Find your existing scoreboard</h1>
+  <p class="intro">Paste the private control link you saved when you created your scoreboard. After you enter your password, you can open its overlay links.</p>
+  <form id="find-form">
+    <label for="control-link">Private control link</label>
+    <input id="control-link" type="text" required autocomplete="url" placeholder="https://your-site/manage/…">
+    <p class="help">For your privacy, scoreboards are not publicly searchable. Your control link is needed to find yours.</p>
+    <button type="submit">Open my scoreboard</button>
+  </form>
+  <p class="message" id="message" role="status" aria-live="polite"></p>
+  <a class="back" href="/">← Back to Scoreboard Studio</a>
+</main>
+<script>
+  document.getElementById('find-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const message = document.getElementById('message');
+    message.textContent = '';
+    let link;
+    try {
+      link = new URL(document.getElementById('control-link').value.trim(), location.origin);
+    } catch {
+      message.textContent = 'Enter a valid private control link.';
+      return;
+    }
+    const match = link.pathname.match(/^\/manage\/([a-f0-9]{64})$/);
+    if (link.origin !== location.origin || !match) {
+      message.textContent = 'That link is not a scoreboard control link for this site.';
+      return;
+    }
+    location.assign(`/manage/${match[1]}`);
+  });
+</script>
+</body>
+</html>

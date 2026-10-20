@@ -81,6 +81,7 @@ const pages = {
   '/champions': 'overlays/champions.html',
   '/champions/control': 'controls/champions.html',
   '/new': 'rooms/create.html',
+  '/find-room': 'rooms/find.html',
 };
 
 const legacyBoardIds = {

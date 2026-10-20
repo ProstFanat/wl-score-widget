@@ -45,28 +45,18 @@
     content:"";
     opacity:.9;
   }
-  .topline { display:flex; align-items:center; justify-content:space-between; margin:0 2px 9px; }
-  .brand { display:flex; align-items:center; gap:8px; color:#fff; font-size:13px; font-weight:850; letter-spacing:3px; }
-  .brand-mark { width:5px; height:5px; transform:rotate(45deg); background:var(--gold); box-shadow:0 0 8px rgba(232,199,126,.7); }
-  .subtitle { margin-left:3px; color:var(--muted); font-size:9px; font-weight:700; letter-spacing:1.8px; }
-  .live { display:flex; align-items:center; gap:6px; color:#b9d3d4; font-size:8px; font-weight:800; letter-spacing:1.5px; }
-  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 9px var(--cyan); }
   .score-area { min-width:0; }
   .scoreline { display:grid; grid-template-columns:1fr 54px 1fr; align-items:center; }
   .side { display:flex; align-items:center; gap:10px; }
   .side.loss { justify-content:flex-end; }
   .number { color:var(--gold-bright); font-size:43px; font-weight:850; line-height:.95; letter-spacing:-2px; text-shadow:0 0 18px rgba(232,199,126,.25); }
   .loss .number { color:#f5f8fa; text-shadow:0 0 18px rgba(120,230,223,.15); }
-  .label { color:var(--gold); font-size:9px; font-weight:850; letter-spacing:2.4px; }
-  .loss .label { color:var(--cyan); }
   .separator { color:#61727c; font-size:23px; font-weight:300; text-align:center; }
   .progress-row { display:flex; align-items:center; gap:10px; margin-top:11px; }
-  .progress-label { flex:none; color:var(--muted); font-size:8px; font-weight:800; letter-spacing:1.3px; }
   .segments { display:grid; flex:1; grid-template-columns:repeat(15,1fr); gap:4px; }
   .segment { height:3px; border-radius:3px; background:rgba(212,228,229,.15); }
   .segment.win { background:linear-gradient(90deg,var(--cyan),#d4f8e9); box-shadow:0 0 7px rgba(120,230,223,.45); }
   .segment.loss { background:linear-gradient(90deg,#ff626f,#ff9a86); box-shadow:0 0 7px rgba(255,98,111,.55); }
-  .played-count { flex:none; min-width:37px; color:#d8e4e6; font-size:9px; font-weight:750; text-align:right; }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
   .card.flash { animation:card-flash .55s ease-out; }
   @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
@@ -77,7 +67,6 @@
     .scoreline { grid-template-columns:1fr 26px 1fr; }
     .side { gap:6px; }
     .number { font-size:35px; }
-    .label { font-size:8px; letter-spacing:1.5px; }
     .segments { gap:2px; }
   }
   @media (prefers-reduced-motion:reduce) {
@@ -88,28 +77,18 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="Champions wins and losses">
-    <div class="topline">
-      <div>
-        <div class="brand"><span class="brand-mark"></span>CHAMPIONS</div>
-      </div>
-      <div class="live"><span class="live-dot"></span>LIVE RECORD</div>
-    </div>
     <div class="score-area">
       <div class="scoreline">
         <div class="side">
           <span class="number" id="w">0</span>
-          <span class="label">WINS</span>
         </div>
         <span class="separator">—</span>
         <div class="side loss">
-          <span class="label">LOSSES</span>
           <span class="number" id="l">0</span>
         </div>
       </div>
       <div class="progress-row">
-        <span class="progress-label">MATCHES</span>
         <div class="segments" id="segments" aria-label="Match result history"></div>
-        <span class="played-count" id="played">0 / 15</span>
       </div>
     </div>
   </section>
@@ -145,19 +124,23 @@
     const history = Array.isArray(state.history) && state.history.length === total
       ? state.history
       : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
-    const played = Math.min(total, 15);
     [...segments.children].forEach((segment, index) => {
       const result = history[index];
       segment.classList.toggle('win', result === 'W');
       segment.classList.toggle('loss', result === 'L');
       segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
     });
-    document.getElementById('played').textContent = `${played} / ${state.max || 15}`;
     first = false;
   }
 
   if (new URLSearchParams(location.search).get('preview') === '1') {
-    document.querySelector('.live').lastChild.textContent = 'DESIGN PREVIEW';
+    if (window.self === window.top) {
+      const homeLink = document.createElement('a');
+      homeLink.href = '/';
+      homeLink.textContent = '← Scoreboard Studio';
+      homeLink.style.cssText = 'position:fixed;top:10px;left:12px;color:#fff0c4;font:700 11px Segoe UI,Arial,sans-serif;text-decoration:none';
+      document.body.appendChild(homeLink);
+    }
     render({ wins:5, losses:4, history:[...'WLWWLWWLL'], max:15 });
   } else {
     new EventSource(BASE + '/champions/events').onmessage = event => render(JSON.parse(event.data));

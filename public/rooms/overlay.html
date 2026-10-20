@@ -28,27 +28,18 @@
   }
   .card::before { position:absolute; inset:5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
   .card::after { position:absolute; top:0; right:0; width:45%; height:2px; background:linear-gradient(90deg,transparent,var(--second),var(--accent)); content:""; }
-  .topline { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 10px; }
-  .brand { overflow:hidden; color:#fff; font-size:13px; font-weight:850; letter-spacing:2.3px; text-overflow:ellipsis; white-space:nowrap; }
-  .subtitle { margin-top:3px; color:var(--muted); font-size:8px; font-weight:750; letter-spacing:1.7px; }
-  .live { display:flex; flex:none; align-items:center; gap:6px; color:#cad6d9; font-size:8px; font-weight:800; letter-spacing:1px; }
-  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 9px var(--accent); }
-  .scoreline { display:grid; grid-template-columns:1fr 38px 1fr; align-items:center; }
+  .scoreline { display:grid; grid-template-columns:1fr 48px 1fr; align-items:center; }
   .side { display:flex; align-items:center; gap:9px; }
   .side.loss { justify-content:flex-end; }
   .number { color:var(--second); font-size:43px; font-weight:850; line-height:.95; letter-spacing:-2px; text-shadow:0 0 18px color-mix(in srgb,var(--second) 32%,transparent); }
   .loss .number { color:#f5f8fa; text-shadow:0 0 18px color-mix(in srgb,var(--accent) 20%,transparent); }
-  .label { color:var(--second); font-size:9px; font-weight:850; letter-spacing:2.2px; }
-  .loss .label { color:var(--accent); }
-  .separator { color:var(--muted); font-size:23px; text-align:center; }
+  .separator { display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:23px; text-align:center; }
   .progress-row { display:flex; align-items:center; gap:9px; margin-top:11px; }
-  .progress-label { flex:none; color:var(--muted); font-size:8px; font-weight:800; letter-spacing:1.2px; }
   .segments { display:grid; flex:1; grid-template-columns:repeat(15,1fr); gap:4px; }
   .segment { height:3px; border-radius:3px; background:rgba(236,240,244,.2); }
   .segment.win { background:linear-gradient(90deg,var(--accent),var(--accent-soft)); box-shadow:0 0 7px color-mix(in srgb,var(--accent) 50%,transparent); }
   .segment.loss { background:linear-gradient(90deg,#ff626f,#ff9a86); box-shadow:0 0 7px rgba(255,98,111,.55); }
-  .played-count { flex:none; min-width:37px; color:#e2e8eb; font-size:9px; font-weight:750; text-align:right; }
-  .pumpkin { display:none; width:42px; height:37px; flex:none; filter:drop-shadow(0 0 8px rgba(255,117,37,.5)); animation:haunt 5s ease-in-out infinite; }
+  .pumpkin { display:none; width:44px; height:40px; flex:none; filter:drop-shadow(0 0 8px rgba(255,117,37,.5)); animation:haunt 5s ease-in-out infinite; }
   .card.halloween { --accent:#bd83ff; --accent-soft:#f0b6ff; --second:#ffbd75; --muted:#b1a0bd; }
   .card.halloween .pumpkin { display:block; }
   .card.halloween .separator { color:#ff9a52; }
@@ -61,14 +52,11 @@
   @media (max-width:500px) {
     .wrap { padding:12px; }
     .card { padding:13px; }
-    .scoreline { grid-template-columns:1fr 26px 1fr; }
+    .scoreline { grid-template-columns:1fr 40px 1fr; }
     .side { gap:6px; }
     .number { font-size:35px; }
-    .label { font-size:8px; letter-spacing:1.5px; }
     .segments { gap:2px; }
-    .brand { font-size:11px; letter-spacing:1.6px; }
-    .live { font-size:7px; }
-    .pumpkin { width:34px; height:31px; }
+    .pumpkin { width:36px; height:33px; }
   }
   @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
 </style>
@@ -76,13 +64,9 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="Personal wins and losses">
-    <div class="topline">
-      <div>
-        <div class="brand" id="name">MY SCOREBOARD</div>
-        <div class="subtitle" id="theme-name">WEEKEND LEAGUE · 15 MATCHES</div>
-      </div>
-      <div class="live"><span class="live-dot"></span>LIVE</div>
-      <svg class="pumpkin" viewBox="0 0 64 56" role="img" aria-label="Glowing jack-o'-lantern">
+    <div class="scoreline">
+      <div class="side"><span class="number" id="w">0</span></div>
+      <span class="separator" id="separator">—<svg class="pumpkin" viewBox="0 0 64 56" role="img" aria-label="Glowing jack-o'-lantern">
         <defs>
           <linearGradient id="gourd" x1="12" y1="11" x2="51" y2="47" gradientUnits="userSpaceOnUse">
             <stop stop-color="#ffbd56"/><stop offset=".48" stop-color="#ff812b"/><stop offset="1" stop-color="#c74416"/>
@@ -96,17 +80,11 @@
         <path d="M32 14c-4 7-4 27 0 38M17 18c-5 8-5 22 1 29M47 18c5 8 5 22-1 29" fill="none" stroke="#a83c1b" stroke-opacity=".55" stroke-width="2"/>
         <path d="m15 25 13 3-7 8-6-11Zm34 0-13 3 7 8 6-11Z" fill="url(#glow)"/>
         <path d="m24 41 5-3 3 3 4-3 7 3-4 5H28l-4-5Z" fill="url(#glow)"/>
-      </svg>
-    </div>
-    <div class="scoreline">
-      <div class="side"><span class="number" id="w">0</span><span class="label">WINS</span></div>
-      <span class="separator">—</span>
-      <div class="side loss"><span class="label">LOSSES</span><span class="number" id="l">0</span></div>
+      </svg></span>
+      <div class="side loss"><span class="number" id="l">0</span></div>
     </div>
     <div class="progress-row">
-      <span class="progress-label">MATCHES</span>
       <div class="segments" id="segments" aria-label="Match result history"></div>
-      <span class="played-count" id="played">0 / 15</span>
     </div>
   </section>
 </div>
@@ -117,10 +95,7 @@
   const card = document.getElementById('card');
   card.classList.add(theme);
   if (theme === 'halloween') {
-    document.getElementById('theme-name').textContent = 'NIGHT LEAGUE · 15 MATCHES';
-    document.querySelector('.separator').textContent = '✦';
-  } else if (theme === 'champions') {
-    document.getElementById('theme-name').textContent = 'CHAMPIONS · 15 MATCHES';
+    document.getElementById('separator').firstChild.textContent = '';
   } else {
     card.classList.add('classic');
   }
@@ -148,21 +123,18 @@
 
   new EventSource(`/room/${viewId}/events`).onmessage = event => {
     const state = JSON.parse(event.data);
-    document.getElementById('name').textContent = state.name || 'MY SCOREBOARD';
     updateScore('w', state.wins);
     updateScore('l', state.losses);
     const total = state.wins + state.losses;
     const history = Array.isArray(state.history) && state.history.length === total
       ? state.history
       : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
-    const played = Math.min(total, 15);
     [...segments.children].forEach((segment, index) => {
       const result = history[index];
       segment.classList.toggle('win', result === 'W');
       segment.classList.toggle('loss', result === 'L');
       segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
     });
-    document.getElementById('played').textContent = `${played} / ${state.max || 15}`;
     first = false;
   };
 </script>
