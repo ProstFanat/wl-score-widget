@@ -85,11 +85,13 @@
 </main>
 <script>
   const token = location.pathname.split('/').pop();
+  const viewControl = location.pathname.startsWith('/manage-room/');
+  const apiBase = viewControl ? `/api/rooms/by-view/${token}` : `/api/rooms/${token}`;
   let password = '';
   let passwordSetup = false;
 
   async function act(action, query = '') {
-      const response = await fetch(`/api/rooms/${token}/${action}${query}`, {
+      const response = await fetch(`${apiBase}/${action}${query}`, {
         method:'POST',
         headers:{ 'x-scoreboard-password':password },
       });
@@ -145,7 +147,7 @@
     button.disabled = true;
     error.textContent = '';
     try {
-      if (passwordSetup) {
+      if (passwordSetup && !viewControl) {
         const setupResponse = await fetch(`/api/rooms/${token}/password`, {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
@@ -155,11 +157,12 @@
         if (!setupResponse.ok) throw new Error(setupData.error || `Request failed (${setupResponse.status})`);
         passwordSetup = false;
       }
-      const response = await fetch(`/api/rooms/${token}`, {
+      const response = await fetch(apiBase, {
         headers:{ 'x-scoreboard-password':password },
       });
       const data = await response.json();
       if (response.status === 428) {
+        if (viewControl) throw new Error(data.error || 'Open your saved private control link to set a password for this older scoreboard.');
         passwordSetup = true;
         document.getElementById('password-label').textContent = 'Create a password for this scoreboard';
         document.getElementById('password').autocomplete = 'new-password';

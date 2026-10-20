@@ -42,7 +42,8 @@
   <p class="intro">Get a private control page and a shareable overlay. Your score is saved independently and stays available after server restarts.</p>
   <form id="create-form">
     <label for="name">Scoreboard name</label>
-    <input id="name" maxlength="40" placeholder="e.g. Adrian's Weekend League" autocomplete="nickname">
+    <input id="name" maxlength="40" required placeholder="e.g. Adrian's Weekend League" autocomplete="nickname">
+    <p class="help">Choose a unique name. You can use it later to find your scoreboard.</p>
     <div class="field">
       <label for="password">Control password</label>
       <input id="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password" placeholder="At least 8 characters">

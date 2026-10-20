@@ -27,34 +27,37 @@
 <main>
   <div class="eyebrow">YOUR STREAM · YOUR SCORE</div>
   <h1>Find your existing scoreboard</h1>
-  <p class="intro">Paste the private control link you saved when you created your scoreboard. After you enter your password, you can open its overlay links.</p>
+  <p class="intro">Search for your existing scoreboard by its exact name. After you enter its password, you can open its overlay links.</p>
   <form id="find-form">
-    <label for="control-link">Private control link</label>
-    <input id="control-link" type="text" required autocomplete="url" placeholder="https://your-site/manage/…">
-    <p class="help">For your privacy, scoreboards are not publicly searchable. Your control link is needed to find yours.</p>
-    <button type="submit">Open my scoreboard</button>
+    <label for="room-name">Scoreboard name</label>
+    <input id="room-name" type="text" maxlength="40" required autocomplete="off" placeholder="Enter the exact scoreboard name">
+    <p class="help">Room names are matched exactly, ignoring capitalization. If you have an older room without a unique name, use its saved private control link.</p>
+    <button id="search-button" type="submit">Find my scoreboard</button>
   </form>
   <p class="message" id="message" role="status" aria-live="polite"></p>
   <a class="back" href="/">← Back to Scoreboard Studio</a>
 </main>
 <script>
-  document.getElementById('find-form').addEventListener('submit', event => {
+  document.getElementById('find-form').addEventListener('submit', async event => {
     event.preventDefault();
     const message = document.getElementById('message');
+    const button = document.getElementById('search-button');
     message.textContent = '';
-    let link;
+    button.disabled = true;
     try {
-      link = new URL(document.getElementById('control-link').value.trim(), location.origin);
-    } catch {
-      message.textContent = 'Enter a valid private control link.';
-      return;
+      const response = await fetch('/api/rooms/search', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ name:document.getElementById('room-name').value }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Search failed (${response.status})`);
+      location.assign(data.controlUrl);
+    } catch (error) {
+      message.textContent = error.message;
+    } finally {
+      button.disabled = false;
     }
-    const match = link.pathname.match(/^\/manage\/([a-f0-9]{64})$/);
-    if (link.origin !== location.origin || !match) {
-      message.textContent = 'That link is not a scoreboard control link for this site.';
-      return;
-    }
-    location.assign(`/manage/${match[1]}`);
   });
 </script>
 </body>

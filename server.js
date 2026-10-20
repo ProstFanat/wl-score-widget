@@ -357,6 +357,28 @@ async function handleRequest(req, res) {
     });
   }
 
+  if (req.method === 'POST' && url === '/api/rooms/search') {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch (error) {
+      return publicError(res, 400, error.message);
+    }
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (!name || name.length > 40) return publicError(res, 400, 'Enter a room name of 1 to 40 characters');
+    const { rows } = await pool.query(
+      'SELECT view_id, name FROM scoreboards WHERE view_id IS NOT NULL AND LOWER(name) = LOWER($1)',
+      [name],
+    );
+    if (!rows.length) return publicError(res, 404, 'No scoreboard found with that exact name');
+    if (rows.length > 1) return publicError(res, 409, 'More than one existing scoreboard has that name. Use its saved private control link.');
+    return sendJson(res, 200, {
+      name: rows[0].name,
+      controlUrl: `/manage-room/${rows[0].view_id}`,
+    });
+  }
+
   if (req.method === 'POST' && url === '/api/rooms') {
     if (!pool) return publicError(res, 503, 'Add a PostgreSQL database in Render and set DATABASE_URL to enable personal scoreboards');
     let body;
@@ -368,6 +390,7 @@ async function handleRequest(req, res) {
     const name = typeof body.name === 'string'
       ? body.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 40)
       : '';
+    if (!name) return publicError(res, 400, 'Scoreboard name is required');
     const password = typeof body.password === 'string' ? body.password : '';
     if (password.length < 8 || password.length > 128) {
       return publicError(res, 400, 'Password must be between 8 and 128 characters');
@@ -377,13 +400,32 @@ async function handleRequest(req, res) {
     const passwordSalt = crypto.randomBytes(16).toString('hex');
     const passwordHash = hashPassword(password, passwordSalt);
     const boardId = `room:${viewId}`;
-    await pool.query(
-      `INSERT INTO scoreboards (id, view_id, control_hash, password_salt, password_hash, name, wins, losses, history)
-       VALUES ($1, $2, $3, $4, $5, $6, 0, 0, '{}')`,
-      [boardId, viewId, crypto.createHash('sha256').update(controlToken).digest('hex'), passwordSalt, passwordHash, name || 'My scoreboard'],
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(hashtextextended(LOWER($1), 0))', [name]);
+      const { rows } = await client.query(
+        'SELECT 1 FROM scoreboards WHERE view_id IS NOT NULL AND LOWER(name) = LOWER($1) LIMIT 1',
+        [name],
+      );
+      if (rows.length) {
+        await client.query('ROLLBACK');
+        return publicError(res, 409, 'A scoreboard with that name already exists. Choose a unique name.');
+      }
+      await client.query(
+        `INSERT INTO scoreboards (id, view_id, control_hash, password_salt, password_hash, name, wins, losses, history)
+         VALUES ($1, $2, $3, $4, $5, $6, 0, 0, '{}')`,
+        [boardId, viewId, crypto.createHash('sha256').update(controlToken).digest('hex'), passwordSalt, passwordHash, name],
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
     return sendJson(res, 201, {
-      name: name || 'My scoreboard',
+      name,
       controlUrl: `/manage/${controlToken}`,
       overlays: {
         classic: `/room/${viewId}/classic`,
@@ -429,6 +471,15 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/control.html')));
   }
 
+  const roomManageRoute = url.match(/^\/manage-room\/([a-f0-9]{32})$/);
+  if (req.method === 'GET' && roomManageRoute) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const { rows } = await pool.query('SELECT id FROM scoreboards WHERE view_id = $1', [roomManageRoute[1]]);
+    if (!rows[0]) return publicError(res, 404, 'Scoreboard not found');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/control.html')));
+  }
+
   const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(classic|halloween|champions)$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
@@ -449,6 +500,47 @@ async function handleRequest(req, res) {
       return publicError(res, 401, 'Incorrect scoreboard password');
     }
     const state = await applyAction(rows[0].id, roomAction[2], new URLSearchParams(query));
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(rows[0].id, state);
+    return sendJson(res, 200, state);
+  }
+
+  const roomViewDetails = url.match(/^\/api\/rooms\/by-view\/([a-f0-9]{32})$/);
+  if (req.method === 'GET' && roomViewDetails) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const { rows } = await pool.query(
+      'SELECT id, view_id, name, wins, losses, history, password_salt, password_hash FROM scoreboards WHERE view_id = $1',
+      [roomViewDetails[1]],
+    );
+    if (!rows[0]) return publicError(res, 404, 'Scoreboard not found');
+    if (!rows[0].password_hash) return publicError(res, 428, 'This older scoreboard has no password. Open its saved private control link to set one.');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    return sendJson(res, 200, {
+      ...normalizeBoard(rows[0]),
+      viewId: rows[0].view_id,
+      overlays: {
+        classic: `/room/${rows[0].view_id}/classic`,
+        halloween: `/room/${rows[0].view_id}/halloween`,
+        champions: `/room/${rows[0].view_id}/champions`,
+      },
+    });
+  }
+
+  const roomViewAction = url.match(/^\/api\/rooms\/by-view\/([a-f0-9]{32})\/(win|loss|undo|reset|set)$/);
+  if (req.method === 'POST' && roomViewAction) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const { rows } = await pool.query(
+      'SELECT id, password_salt, password_hash FROM scoreboards WHERE view_id = $1',
+      [roomViewAction[1]],
+    );
+    if (!rows[0]) return publicError(res, 404, 'Scoreboard not found');
+    if (!rows[0].password_hash) return publicError(res, 428, 'This older scoreboard has no password. Open its saved private control link to set one.');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    const state = await applyAction(rows[0].id, roomViewAction[2], new URLSearchParams(query));
     if (!state) return publicError(res, 404, 'Scoreboard not found');
     sendBoardUpdate(rows[0].id, state);
     return sendJson(res, 200, state);
