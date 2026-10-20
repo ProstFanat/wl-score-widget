@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Champions Score Control</title>
+<style>
+  :root { color-scheme:dark; --gold:#e8c77e; --cyan:#78e6df; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; padding:20px; background:radial-gradient(ellipse at 50% -10%,#18303a 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  .panel { width:min(390px,100%); margin:0 auto; padding:22px; border:1px solid rgba(232,199,126,.42); border-radius:18px; background:rgba(12,25,34,.92); box-shadow:0 18px 55px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.06); }
+  header { display:flex; align-items:center; gap:14px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.09); }
+  .crest { display:grid; flex:none; width:48px; height:54px; place-items:center; border:1px solid rgba(232,199,126,.55); border-radius:15px 15px 19px 19px; background:linear-gradient(145deg,rgba(232,199,126,.17),rgba(10,24,33,.8)); }
+  .crest svg { width:34px; height:40px; }
+  h1 { margin:0; color:#fff; font-size:16px; font-weight:850; letter-spacing:2px; }
+  .subtitle { margin:4px 0 0; color:#98aab2; font-size:10px; font-weight:700; letter-spacing:1.5px; }
+  .score { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; margin:20px 0; padding:15px 12px; border-radius:12px; background:linear-gradient(110deg,rgba(232,199,126,.08),rgba(120,230,223,.045)); text-align:center; }
+  .score-value { color:#fff0c4; font-size:36px; font-weight:850; line-height:1; }
+  .score-value.loss { color:#d8f5f1; }
+  .score-label { margin-top:5px; color:#9aadb3; font-size:9px; font-weight:800; letter-spacing:1.8px; }
+  .dash { color:#53646b; font-size:24px; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button { width:100%; min-height:47px; border:0; border-radius:9px; cursor:pointer; font:800 14px "Segoe UI",Arial,sans-serif; transition:filter .15s,transform .15s; }
+  button:hover { filter:brightness(1.09); }
+  button:active { transform:scale(.98); }
+  button:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+  .win { color:#102029; background:linear-gradient(135deg,#fff0c4,#d8ad55); }
+  .loss-button { color:#092022; background:linear-gradient(135deg,#a3f0e8,#53c6c0); }
+  .utility { color:#dce6e7; background:#20313b; font-size:12px; font-weight:700; }
+  .section { margin-top:20px; padding-top:17px; border-top:1px solid rgba(255,255,255,.09); }
+  .section-title { margin:0 0 11px; color:#c3cfd0; font-size:10px; font-weight:800; letter-spacing:1.7px; text-transform:uppercase; }
+  .fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  label { display:block; margin-bottom:6px; color:#9aadb3; font-size:11px; font-weight:650; }
+  input { width:100%; padding:10px; border:1px solid #354851; border-radius:8px; background:#08131b; color:#fff; font:700 19px "Segoe UI",Arial,sans-serif; text-align:center; }
+  input:focus { outline:2px solid rgba(120,230,223,.65); border-color:var(--cyan); }
+  .set { margin-top:11px; color:#102029; background:linear-gradient(135deg,#fff0c4,#d8ad55); }
+  .hint { margin-top:15px; color:#81949b; font-size:11px; text-align:center; }
+  .error { min-height:16px; margin:10px 0 0; color:#ff9e91; font-size:11px; text-align:center; }
+</style>
+</head>
+<body>
+<main class="panel">
+  <header>
+    <div class="crest" aria-hidden="true">
+      <svg viewBox="0 0 48 56" fill="none">
+        <path d="M24 2 43 10v14c0 13-7.6 22.8-19 30C12.6 46.8 5 37 5 24V10L24 2Z" stroke="#E8C77E" stroke-width="1.5"/>
+        <path d="M24 7 38 13v11c0 10.2-5.1 18-14 24-8.9-6-14-13.8-14-24V13l14-6Z" stroke="#78E6DF" stroke-opacity=".52"/>
+        <path d="M17 18h14v3h-5v14h5v3H17v-3h5V21h-5v-3Z" fill="#FFF0C4"/>
+        <path d="M14 18h3v4h-3zM31 18h3v4h-3z" fill="#E8C77E"/>
+      </svg>
+    </div>
+    <div><h1>CHAMPIONS</h1><p class="subtitle">WEEKEND LEAGUE CONTROL</p></div>
+  </header>
+  <section class="score" aria-label="Current record" aria-live="polite">
+    <div><div class="score-value" id="w">0</div><div class="score-label">WINS</div></div>
+    <span class="dash">—</span>
+    <div><div class="score-value loss" id="l">0</div><div class="score-label">LOSSES</div></div>
+  </section>
+  <div class="actions">
+    <button class="win" onclick="runAction('win')">+ WIN&nbsp; (W)</button>
+    <button class="loss-button" onclick="runAction('loss')">+ LOSS&nbsp; (L)</button>
+    <button class="utility" onclick="runAction('undo')">Undo last&nbsp; (U)</button>
+    <button class="utility" onclick="if(confirm('Reset the Champions record?'))runAction('reset')">Reset run</button>
+  </div>
+  <section class="section">
+    <h2 class="section-title">Set record manually</h2>
+    <div class="fields">
+      <div><label for="sw">Wins</label><input id="sw" type="number" min="0" max="999" inputmode="numeric"></div>
+      <div><label for="sl">Losses</label><input id="sl" type="number" min="0" max="999" inputmode="numeric"></div>
+    </div>
+    <button class="set" onclick="setValues()">Update record</button>
+  </section>
+  <p class="hint">Keyboard: W = win · L = loss · U = undo</p>
+  <p class="error" id="error" role="status" aria-live="polite"></p>
+</main>
+<script>
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const getPw = () => { try { return localStorage.getItem('pw') || ''; } catch { return ''; } };
+  async function act(action, query = '') {
+    const response = await fetch(BASE + '/api/champions/' + action + query, {
+      method:'POST',
+      headers:{ 'x-password':getPw() }
+    });
+    if (response.status === 401) {
+      const password = prompt('Control password:');
+      if (password === null) return;
+      try { localStorage.setItem('pw', password); } catch {}
+      return act(action, query);
+    }
+    if (!response.ok) throw new Error(`Request failed (${response.status})`);
+    document.getElementById('error').textContent = '';
+  }
+  function runAction(action, query = '') {
+    act(action, query).catch(error => {
+      document.getElementById('error').textContent = `Could not update score: ${error.message}`;
+    });
+  }
+  new EventSource(BASE + '/champions/events').onmessage = event => {
+    const state = JSON.parse(event.data);
+    document.getElementById('w').textContent = state.wins;
+    document.getElementById('l').textContent = state.losses;
+    for (const [id, value] of [['sw', state.wins], ['sl', state.losses]]) {
+      const input = document.getElementById(id);
+      if (document.activeElement !== input) input.value = value;
+    }
+  };
+  function setValues() {
+    const query = new URLSearchParams();
+    const wins = document.getElementById('sw').value;
+    const losses = document.getElementById('sl').value;
+    if (wins !== '') query.set('wins', wins);
+    if (losses !== '') query.set('losses', losses);
+    runAction('set', '?' + query);
+    document.activeElement.blur();
+  }
+  for (const id of ['sw', 'sl']) {
+    document.getElementById(id).addEventListener('keydown', event => {
+      if (event.key === 'Enter') setValues();
+    });
+  }
+  addEventListener('keydown', event => {
+    if (event.target.tagName === 'INPUT') return;
+    const key = event.key.toLowerCase();
+    if (key === 'w') runAction('win');
+    else if (key === 'l') runAction('loss');
+    else if (key === 'u') runAction('undo');
+  });
+</script>
+</body>
+</html>

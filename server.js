@@ -1,79 +1,508 @@
-// Zero-dependency server for the FUT Champions widget.
-// Run: node server.js   (Node 16+)
+// Node server for the score overlays. PostgreSQL is used when DATABASE_URL is configured.
+// Run: npm start   (Node 16+)
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 3000;
+const PUBLIC_DIR = path.join(__dirname, 'public');
 const STATE_FILE = process.env.STATE_FILE || path.join(__dirname, 'state.json');
+const HALLOWEEN_STATE_FILE = process.env.HALLOWEEN_STATE_FILE || path.join(__dirname, 'halloween-state.json');
+const CHAMPIONS_STATE_FILE = process.env.CHAMPIONS_STATE_FILE || path.join(__dirname, 'champions-state.json');
 const PASSWORD = process.env.CONTROL_PASSWORD || ''; // empty = no password (local use)
 const MAX_GAMES = 15; // FUT Champions weekend run length; change if the mode differs in FC27
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ...(process.env.NODE_ENV === 'production' ? { ssl: { rejectUnauthorized: false } } : {}),
+  })
+  : null;
 
-let state = { wins: 0, losses: 0, history: [] };
-try { state = { ...state, ...JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) }; } catch {}
+function createScoreboard(stateFile) {
+  let state = { wins: 0, losses: 0, history: [] };
+  try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, 'utf8')) }; } catch {}
 
-const clients = new Set();
-const save = () => fs.writeFileSync(STATE_FILE, JSON.stringify(state));
-const payload = () => JSON.stringify({ ...state, max: MAX_GAMES });
-const broadcast = () => clients.forEach(res => res.write(`data: ${payload()}\n\n`));
+  const clients = new Set();
+  const save = () => fs.writeFileSync(stateFile, JSON.stringify(state));
+  const payload = () => JSON.stringify({ ...state, max: MAX_GAMES });
+  const broadcast = () => clients.forEach(res => res.write(`data: ${payload()}\n\n`));
 
-const actions = {
-  win: () => { state.wins++; state.history.push('W'); },
-  loss: () => { state.losses++; state.history.push('L'); },
-  undo: () => {
-    const last = state.history.pop();
-    if (last === 'W') state.wins = Math.max(0, state.wins - 1);
-    if (last === 'L') state.losses = Math.max(0, state.losses - 1);
-  },
-  reset: () => { state = { wins: 0, losses: 0, history: [] }; },
-  // set exact values, e.g. POST /api/set?wins=5&losses=2 (a missing value is left unchanged)
-  set: params => {
-    const num = (key, fallback) => {
-      const v = parseInt(params.get(key), 10);
-      return Number.isFinite(v) ? Math.min(Math.max(v, 0), 999) : fallback;
-    };
-    state.wins = num('wins', state.wins);
-    state.losses = num('losses', state.losses);
-    // history only drives "undo", so rebuild it to match the new totals
-    state.history = ['W'.repeat(state.wins), 'L'.repeat(state.losses)].join('').split('');
-  },
+  const actions = {
+    win: () => { state.wins++; state.history.push('W'); },
+    loss: () => { state.losses++; state.history.push('L'); },
+    undo: () => {
+      const last = state.history.pop();
+      if (last === 'W') state.wins = Math.max(0, state.wins - 1);
+      if (last === 'L') state.losses = Math.max(0, state.losses - 1);
+    },
+    reset: () => { state = { wins: 0, losses: 0, history: [] }; },
+    // set exact values, e.g. POST /api/set?wins=5&losses=2 (a missing value is left unchanged)
+    set: params => {
+      const num = (key, fallback) => {
+        const v = parseInt(params.get(key), 10);
+        return Number.isFinite(v) ? Math.min(Math.max(v, 0), 999) : fallback;
+      };
+      state.wins = num('wins', state.wins);
+      state.losses = num('losses', state.losses);
+      // history only drives "undo", so rebuild it to match the new totals
+      state.history = ['W'.repeat(state.wins), 'L'.repeat(state.losses)].join('').split('');
+    },
+  };
+
+  return {
+    payload,
+    clients,
+    broadcast,
+    act: (name, params) => {
+      const action = name === 'check' ? () => {} : actions[name];
+      if (!action) return false;
+      action(params);
+      save();
+      broadcast();
+      return true;
+    },
+  };
+}
+
+const scoreboards = {
+  '': createScoreboard(STATE_FILE),
+  halloween: createScoreboard(HALLOWEEN_STATE_FILE),
+  champions: createScoreboard(CHAMPIONS_STATE_FILE),
+};
+const pages = {
+  '/': 'index.html',
+  '/classic': 'overlays/classic.html',
+  '/control': 'controls/classic.html',
+  '/classic/control': 'controls/classic.html',
+  '/halloween': 'overlays/halloween.html',
+  '/halloween/control': 'controls/halloween.html',
+  '/champions': 'overlays/champions.html',
+  '/champions/control': 'controls/champions.html',
+  '/new': 'rooms/create.html',
 };
 
-const pages = { '/': 'overlay.html', '/control': 'control.html' };
+const legacyBoardIds = {
+  '': 'default',
+  halloween: 'halloween',
+  champions: 'champions',
+};
+const roomClients = new Map();
 
-http.createServer((req, res) => {
+function normalizeBoard(row) {
+  return {
+    wins: Number(row.wins),
+    losses: Number(row.losses),
+    history: row.history || [],
+    max: MAX_GAMES,
+    ...(row.name ? { name: row.name } : {}),
+  };
+}
+
+function hashPassword(password, salt) {
+  return crypto.scryptSync(password, salt, 64).toString('hex');
+}
+
+function verifyPassword(password, salt, expectedHash) {
+  if (typeof password !== 'string' || !salt || !expectedHash) return false;
+  const supplied = Buffer.from(hashPassword(password, salt), 'hex');
+  const expected = Buffer.from(expectedHash, 'hex');
+  return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+}
+
+async function initializeDatabase() {
+  if (!pool) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS scoreboards (
+      id TEXT PRIMARY KEY,
+      view_id TEXT UNIQUE,
+      control_hash TEXT UNIQUE,
+      password_salt TEXT,
+      password_hash TEXT,
+      name TEXT NOT NULL,
+      wins INTEGER NOT NULL DEFAULT 0 CHECK (wins >= 0),
+      losses INTEGER NOT NULL DEFAULT 0 CHECK (losses >= 0),
+      history TEXT[] NOT NULL DEFAULT '{}',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query('ALTER TABLE scoreboards ADD COLUMN IF NOT EXISTS password_salt TEXT');
+  await pool.query('ALTER TABLE scoreboards ADD COLUMN IF NOT EXISTS password_hash TEXT');
+
+  for (const [slug, fileBoard] of Object.entries(scoreboards)) {
+    const boardId = legacyBoardIds[slug];
+    const saved = JSON.parse(fileBoard.payload());
+    await pool.query(
+      `INSERT INTO scoreboards (id, name, wins, losses, history)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (id) DO NOTHING`,
+      [boardId, slug ? `${slug} scoreboard` : 'Main scoreboard', saved.wins, saved.losses, saved.history || []],
+    );
+  }
+}
+
+async function getBoard(boardId) {
+  if (!pool) {
+    const localBoard = Object.entries(legacyBoardIds).find(([, id]) => id === boardId);
+    return localBoard ? JSON.parse(scoreboards[localBoard[0]].payload()) : null;
+  }
+  const { rows } = await pool.query(
+    'SELECT wins, losses, history, name FROM scoreboards WHERE id = $1',
+    [boardId],
+  );
+  return rows[0] ? normalizeBoard(rows[0]) : null;
+}
+
+function buildUpdatedState(state, action, params) {
+  const updated = { ...state, history: [...state.history] };
+  if (action === 'win') {
+    updated.wins++;
+    updated.history.push('W');
+  } else if (action === 'loss') {
+    updated.losses++;
+    updated.history.push('L');
+  } else if (action === 'undo') {
+    const last = updated.history.pop();
+    if (last === 'W') updated.wins = Math.max(0, updated.wins - 1);
+    if (last === 'L') updated.losses = Math.max(0, updated.losses - 1);
+  } else if (action === 'reset') {
+    updated.wins = 0;
+    updated.losses = 0;
+    updated.history = [];
+  } else if (action === 'set') {
+    const num = (key, fallback) => {
+      const value = parseInt(params.get(key), 10);
+      return Number.isFinite(value) ? Math.min(Math.max(value, 0), 999) : fallback;
+    };
+    updated.wins = num('wins', updated.wins);
+    updated.losses = num('losses', updated.losses);
+    updated.history = [...'W'.repeat(updated.wins), ...'L'.repeat(updated.losses)];
+  } else if (action !== 'check') {
+    return null;
+  }
+  return updated;
+}
+
+async function applyDatabaseAction(boardId, action, params) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      'SELECT wins, losses, history, name FROM scoreboards WHERE id = $1 FOR UPDATE',
+      [boardId],
+    );
+    if (!result.rows[0]) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    const current = normalizeBoard(result.rows[0]);
+    const updated = buildUpdatedState(current, action, params);
+    if (!updated) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+    await client.query(
+      'UPDATE scoreboards SET wins = $2, losses = $3, history = $4 WHERE id = $1',
+      [boardId, updated.wins, updated.losses, updated.history],
+    );
+    await client.query('COMMIT');
+    return updated;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function applyAction(boardId, action, params) {
+  if (pool) return applyDatabaseAction(boardId, action, params);
+  const localBoard = Object.entries(legacyBoardIds).find(([, id]) => id === boardId);
+  if (!localBoard) return null;
+  if (!scoreboards[localBoard[0]].act(action, params)) return false;
+  return getBoard(boardId);
+}
+
+function sendBoardUpdate(boardId, state) {
+  const subscription = roomClients.get(boardId);
+  if (!subscription) return;
+  const message = JSON.stringify(state);
+  subscription.lastMessage = message;
+  for (const client of subscription.clients) client.write(`data: ${message}\n\n`);
+}
+
+function subscribeToBoard(req, res, boardId, state) {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  const message = JSON.stringify(state);
+  res.write(`data: ${message}\n\n`);
+
+  let subscription = roomClients.get(boardId);
+  if (!subscription) {
+    subscription = { clients: new Set(), lastMessage: message, poll: null, heartbeat: null };
+    roomClients.set(boardId, subscription);
+    if (pool) {
+      subscription.poll = setInterval(async () => {
+        try {
+          const current = await getBoard(boardId);
+          if (current && JSON.stringify(current) !== subscription.lastMessage) {
+            sendBoardUpdate(boardId, current);
+          }
+        } catch (error) {
+          console.error(`Failed to refresh scoreboard ${boardId}:`, error);
+        }
+      }, 2000);
+      subscription.poll.unref();
+    }
+    subscription.heartbeat = setInterval(() => {
+      for (const client of subscription.clients) client.write(': keepalive\n\n');
+    }, 15000);
+    subscription.heartbeat.unref();
+  }
+  subscription.clients.add(res);
+  res.on('close', () => {
+    subscription.clients.delete(res);
+    if (subscription.clients.size === 0) {
+      clearInterval(subscription.poll);
+      clearInterval(subscription.heartbeat);
+      roomClients.delete(boardId);
+    }
+  });
+}
+
+function sendJson(res, status, data) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(data));
+}
+
+function publicError(res, status, message) {
+  sendJson(res, status, { error: message });
+}
+
+function readJsonBody(req, maxBytes = 2048) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.setEncoding('utf8');
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > maxBytes) {
+        reject(new Error('Request body too large'));
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        reject(new Error('Invalid JSON request body'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+async function handleRequest(req, res) {
   const [url, query = ''] = req.url.split('?');
   res.setHeader('Access-Control-Allow-Origin', '*'); // lets pages opened from disk (file://) talk to the server
-  res.setHeader('Access-Control-Allow-Headers', 'x-password');
+  res.setHeader('Access-Control-Allow-Headers', 'x-password, x-scoreboard-password');
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
 
-  if (url === '/events') {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-    res.write(`data: ${payload()}\n\n`);
-    clients.add(res);
-    req.on('close', () => clients.delete(res));
-    return;
+  if (req.method === 'GET' && url === '/events') {
+    const state = await getBoard('default');
+    return state ? subscribeToBoard(req, res, 'default', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
+  }
+  if (req.method === 'GET' && url === '/halloween/events') {
+    const state = await getBoard('halloween');
+    return state ? subscribeToBoard(req, res, 'halloween', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
+  }
+  if (req.method === 'GET' && url === '/champions/events') {
+    const state = await getBoard('champions');
+    return state ? subscribeToBoard(req, res, 'champions', state) : publicError(res, 503, 'Scoreboard storage is unavailable');
   }
 
-  if (req.method === 'POST' && url.startsWith('/api/')) {
+  const roomEvents = url.match(/^\/room\/([a-f0-9]{32})\/events$/);
+  if (req.method === 'GET' && roomEvents) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const boardId = `room:${roomEvents[1]}`;
+    const state = await getBoard(boardId);
+    return state ? subscribeToBoard(req, res, boardId, state) : publicError(res, 404, 'Scoreboard not found');
+  }
+
+  const roomDetails = url.match(/^\/api\/rooms\/([a-f0-9]{64})$/);
+  if (req.method === 'GET' && roomDetails) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const hash = crypto.createHash('sha256').update(roomDetails[1]).digest('hex');
+    const { rows } = await pool.query(
+      'SELECT id, view_id, name, wins, losses, history, password_salt, password_hash FROM scoreboards WHERE control_hash = $1',
+      [hash],
+    );
+    if (!rows[0]) return publicError(res, 401, 'Invalid control link');
+    if (rows[0].password_hash && !verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    if (!rows[0].password_hash) return publicError(res, 428, 'This older scoreboard has no password. Create a new personal scoreboard to set one.');
+    return sendJson(res, 200, {
+      ...normalizeBoard(rows[0]),
+      viewId: rows[0].view_id,
+      overlays: {
+        classic: `/room/${rows[0].view_id}/classic`,
+        halloween: `/room/${rows[0].view_id}/halloween`,
+        champions: `/room/${rows[0].view_id}/champions`,
+      },
+    });
+  }
+
+  if (req.method === 'POST' && url === '/api/rooms') {
+    if (!pool) return publicError(res, 503, 'Add a PostgreSQL database in Render and set DATABASE_URL to enable personal scoreboards');
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch (error) {
+      return publicError(res, 400, error.message);
+    }
+    const name = typeof body.name === 'string'
+      ? body.name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 40)
+      : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (password.length < 8 || password.length > 128) {
+      return publicError(res, 400, 'Password must be between 8 and 128 characters');
+    }
+    const viewId = crypto.randomBytes(16).toString('hex');
+    const controlToken = crypto.randomBytes(32).toString('hex');
+    const passwordSalt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = hashPassword(password, passwordSalt);
+    const boardId = `room:${viewId}`;
+    await pool.query(
+      `INSERT INTO scoreboards (id, view_id, control_hash, password_salt, password_hash, name, wins, losses, history)
+       VALUES ($1, $2, $3, $4, $5, $6, 0, 0, '{}')`,
+      [boardId, viewId, crypto.createHash('sha256').update(controlToken).digest('hex'), passwordSalt, passwordHash, name || 'My scoreboard'],
+    );
+    return sendJson(res, 201, {
+      name: name || 'My scoreboard',
+      controlUrl: `/manage/${controlToken}`,
+      overlays: {
+        classic: `/room/${viewId}/classic`,
+        halloween: `/room/${viewId}/halloween`,
+        champions: `/room/${viewId}/champions`,
+      },
+    });
+  }
+
+  const roomPasswordSetup = url.match(/^\/api\/rooms\/([a-f0-9]{64})\/password$/);
+  if (req.method === 'POST' && roomPasswordSetup) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch (error) {
+      return publicError(res, 400, error.message);
+    }
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (password.length < 8 || password.length > 128) {
+      return publicError(res, 400, 'Password must be between 8 and 128 characters');
+    }
+    const controlHash = crypto.createHash('sha256').update(roomPasswordSetup[1]).digest('hex');
+    const passwordSalt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = hashPassword(password, passwordSalt);
+    const result = await pool.query(
+      'UPDATE scoreboards SET password_salt = $2, password_hash = $3 WHERE control_hash = $1 AND password_hash IS NULL RETURNING id',
+      [controlHash, passwordSalt, passwordHash],
+    );
+    if (result.rows[0]) return sendJson(res, 200, { success: true });
+    const existing = await pool.query('SELECT password_hash FROM scoreboards WHERE control_hash = $1', [controlHash]);
+    if (!existing.rows[0]) return publicError(res, 404, 'Control link not found');
+    return publicError(res, 409, 'A password has already been set for this scoreboard');
+  }
+
+  const manageRoute = url.match(/^\/manage\/([a-f0-9]{64})$/);
+  if (req.method === 'GET' && manageRoute) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const hash = crypto.createHash('sha256').update(manageRoute[1]).digest('hex');
+    const { rows } = await pool.query('SELECT id FROM scoreboards WHERE control_hash = $1', [hash]);
+    if (!rows[0]) return publicError(res, 404, 'Control link not found');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/control.html')));
+  }
+
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(classic|halloween|champions)$/);
+  if (req.method === 'GET' && roomRoute) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const boardId = `room:${roomRoute[1]}`;
+    const state = await getBoard(boardId);
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'rooms/overlay.html')));
+  }
+
+  const roomAction = url.match(/^\/api\/rooms\/([a-f0-9]{64})\/(win|loss|undo|reset|set)$/);
+  if (req.method === 'POST' && roomAction) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const hash = crypto.createHash('sha256').update(roomAction[1]).digest('hex');
+    const { rows } = await pool.query('SELECT id, password_salt, password_hash FROM scoreboards WHERE control_hash = $1', [hash]);
+    if (!rows[0] || !rows[0].password_hash) return publicError(res, 401, 'Invalid control link');
+    if (!verifyPassword(req.headers['x-scoreboard-password'], rows[0].password_salt, rows[0].password_hash)) {
+      return publicError(res, 401, 'Incorrect scoreboard password');
+    }
+    const state = await applyAction(rows[0].id, roomAction[2], new URLSearchParams(query));
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(rows[0].id, state);
+    return sendJson(res, 200, state);
+  }
+
+  const legacyApi = url.match(/^\/api\/(?:(halloween|champions)\/)?(win|loss|undo|reset|set|check)$/);
+  if (req.method === 'POST' && legacyApi) {
     if (PASSWORD && req.headers['x-password'] !== PASSWORD) { res.writeHead(401); return res.end(); }
-    const act = url === '/api/check' ? () => {} : actions[url.slice(5)];
-    if (!act) { res.writeHead(404); return res.end(); }
-    act(new URLSearchParams(query)); save(); broadcast();
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(payload());
+    const slug = legacyApi[1] || '';
+    const boardId = legacyBoardIds[slug];
+    const state = await applyAction(boardId, legacyApi[2], new URLSearchParams(query));
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    sendBoardUpdate(boardId, state);
+    return sendJson(res, 200, state);
   }
 
-  if (pages[url]) {
+  if (req.method === 'GET' && pages[url]) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    return res.end(fs.readFileSync(path.join(__dirname, pages[url])));
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, pages[url])));
   }
-  if (url === '/bird.png') {
+
+  if (req.method === 'GET' && (url === '/bird.png' || url === '/assets/bird.png')) {
     res.writeHead(200, { 'Content-Type': 'image/png' });
-    return res.end(fs.readFileSync(path.join(__dirname, 'bird.png')));
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/bird.png')));
   }
+
   res.writeHead(404); res.end();
-}).listen(PORT, () => {
-  console.log(`Overlay (OBS Browser Source): http://localhost:${PORT}/`);
-  console.log(`Control panel (OBS Dock/browser): http://localhost:${PORT}/control`);
+}
+
+async function start() {
+  if (pool) {
+    pool.on('error', error => console.error('Unexpected PostgreSQL pool error:', error));
+    await initializeDatabase();
+  } else {
+    console.warn('DATABASE_URL is not set; using local JSON files. Render deployments need PostgreSQL for durable scores.');
+  }
+  http.createServer((req, res) => {
+    handleRequest(req, res).catch(error => {
+      console.error(`Request failed for ${req.method} ${req.url}:`, error);
+      if (!res.headersSent) publicError(res, 500, 'The request could not be completed');
+      else res.destroy(error);
+    });
+  }).listen(PORT, () => {
+    console.log(`Widget selector: http://localhost:${PORT}/`);
+    console.log(`Classic overlay (OBS Browser Source): http://localhost:${PORT}/classic`);
+    console.log(`Control panel (OBS Dock/browser): http://localhost:${PORT}/control`);
+    console.log(`Halloween overlay: http://localhost:${PORT}/halloween`);
+    console.log(`Halloween control panel: http://localhost:${PORT}/halloween/control`);
+    console.log(`Champions overlay: http://localhost:${PORT}/champions`);
+    console.log(`Champions control panel: http://localhost:${PORT}/champions/control`);
+    console.log(`Create a personal scoreboard: http://localhost:${PORT}/new`);
+  });
+}
+
+start().catch(error => {
+  console.error('Unable to start the server:', error);
+  process.exitCode = 1;
 });

@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071019">
+<title>Scoreboard Studio</title>
+<style>
+  :root { color-scheme:dark; --gold:#e8c77e; --cyan:#78e6df; --muted:#9aadb5; }
+  * { box-sizing:border-box; }
+  body { min-height:100vh; margin:0; padding:34px 20px 48px; background:radial-gradient(ellipse at 50% -20%,#1a3540 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  .shell { width:min(100%,980px); margin:0 auto; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:30px; }
+  .brand { display:flex; align-items:center; gap:11px; color:#fff; font-size:12px; font-weight:850; letter-spacing:2.5px; }
+  .brand-mark { width:10px; height:10px; transform:rotate(45deg); border:1px solid var(--gold); background:rgba(232,199,126,.24); box-shadow:0 0 12px rgba(232,199,126,.5); }
+  .top-link { color:#9beee7; font-size:12px; font-weight:750; text-decoration:none; }
+  .top-link:hover { color:white; }
+  .hero { display:grid; grid-template-columns:1fr auto; align-items:center; gap:22px; max-width:850px; margin-bottom:34px; }
+  .hero-copy { max-width:620px; }
+  .eyebrow { color:var(--cyan); font-size:10px; font-weight:850; letter-spacing:2.5px; }
+  h1 { margin:9px 0 10px; color:#fff0c4; font-size:clamp(32px,6vw,52px); line-height:1.05; letter-spacing:-1.8px; }
+  .intro { max-width:620px; margin:0; color:#b0bec2; font-size:15px; line-height:1.65; }
+  .section-head { display:flex; align-items:end; justify-content:space-between; gap:15px; margin:28px 0 13px; }
+  .section-head h2 { margin:0; color:#edf3f1; font-size:17px; letter-spacing:.2px; }
+  .section-head p { margin:0; color:var(--muted); font-size:11px; }
+  .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .widget { --accent:var(--cyan); --accent-glow:rgba(120,230,223,.1); position:relative; display:flex; min-height:206px; flex-direction:column; overflow:hidden; padding:18px; border:1px solid rgba(120,230,223,.32); border-radius:14px; background:linear-gradient(145deg,rgba(17,37,47,.84),rgba(8,19,28,.78)); box-shadow:inset 0 1px rgba(255,255,255,.035); }
+  .widget::after { position:absolute; top:0; right:0; left:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent)); content:""; opacity:.8; }
+  .widget:hover { border-color:var(--accent); box-shadow:0 9px 25px var(--accent-glow),inset 0 1px rgba(255,255,255,.06); transform:translateY(-2px); }
+  .widget { transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+  .widget.halloween { --accent:#ff8733; --accent-glow:rgba(255,135,51,.14); border-color:rgba(255,135,51,.32); }
+  .widget.champions { --accent:var(--gold); --accent-glow:rgba(232,199,126,.13); border-color:rgba(232,199,126,.32); }
+  .icon { display:grid; width:42px; height:42px; place-items:center; margin-bottom:14px; border:1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-radius:12px; background:color-mix(in srgb,var(--accent) 10%,transparent); color:var(--accent); font-size:21px; }
+  .widget h3 { margin:0 0 6px; color:#f7f7f2; font-size:16px; }
+  .widget p { margin:0; color:#9eafb5; font-size:12px; line-height:1.5; }
+  .preview { display:inline-flex; align-items:center; justify-content:center; min-height:34px; margin-top:auto; padding:0 12px; border:1px solid color-mix(in srgb,var(--accent) 50%,transparent); border-radius:8px; color:var(--accent); font-size:10px; font-weight:850; text-decoration:none; }
+  .preview:hover { background:color-mix(in srgb,var(--accent) 10%,transparent); }
+  .personal { display:grid; grid-template-columns:1fr auto; align-items:center; gap:20px; margin-bottom:32px; padding:25px; border:1px solid rgba(120,230,223,.48); border-radius:16px; background:linear-gradient(110deg,rgba(120,230,223,.12),rgba(232,199,126,.07)); box-shadow:0 12px 35px rgba(0,0,0,.16); }
+  .personal h2 { margin:0 0 6px; color:#e8fffb; font-size:18px; }
+  .personal p { max-width:570px; margin:0; color:#aab9be; font-size:12px; line-height:1.55; }
+  .button { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 17px; border-radius:9px; background:linear-gradient(135deg,#c9fff4,#78e6df); color:#092022; font-size:12px; font-weight:850; text-decoration:none; white-space:nowrap; }
+  .button:hover { filter:brightness(1.08); }
+  .note { margin-top:18px; color:#7f9299; font-size:11px; line-height:1.5; }
+  @media (max-width:700px) {
+    body { padding:25px 15px 36px; }
+    .hero { grid-template-columns:1fr; gap:16px; }
+    .grid { grid-template-columns:1fr; }
+    .widget { min-height:178px; }
+    .personal { grid-template-columns:1fr; }
+    .button { justify-self:start; }
+    .section-head { align-items:start; flex-direction:column; gap:5px; }
+  }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div class="brand"><span class="brand-mark"></span>SCOREBOARD STUDIO</div>
+    <a class="top-link" href="/new">Create your scoreboard&nbsp; ↗</a>
+  </header>
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">YOUR STREAM · YOUR SCORE</div>
+      <h1>Your matchday.<br>Your scoreboard.</h1>
+      <p class="intro">Create a scoreboard that’s yours, set a private password, and choose the look that fits your stream.</p>
+    </div>
+    <a class="button" href="/new">CREATE PERSONAL SCOREBOARD</a>
+  </section>
+  <div class="section-head">
+    <h2>Preview the styles</h2>
+    <p>These are demos only; create a personal scoreboard to track your own score.</p>
+  </div>
+  <section class="grid" aria-label="Available scoreboard widgets">
+    <article class="widget classic">
+      <div class="icon" aria-hidden="true">↗</div>
+      <h3>Classic</h3>
+      <p>Clean, minimal wins and losses with a live 15-match progress strip.</p>
+      <a class="preview" href="/classic?preview=1" target="_blank" rel="noopener">PREVIEW CLASSIC ↗</a>
+    </article>
+    <article class="widget halloween">
+      <div class="icon" aria-hidden="true">♨</div>
+      <h3>Halloween Night League</h3>
+      <p>Glowing jack-o’-lantern, eerie accents, and a spooky match history.</p>
+      <a class="preview" href="/halloween?preview=1" target="_blank" rel="noopener">PREVIEW HALLOWEEN ↗</a>
+    </article>
+    <article class="widget champions">
+      <div class="icon" aria-hidden="true">✦</div>
+      <h3>Champions</h3>
+      <p>Premium broadcast-inspired styling with clear, ordered match results.</p>
+      <a class="preview" href="/champions?preview=1" target="_blank" rel="noopener">PREVIEW CHAMPIONS ↗</a>
+    </article>
+  </section>
+  <section class="personal">
+    <div>
+      <h2>Your own scoreboard starts here</h2>
+      <p>Set a password, keep your score separate, and use its private controls with any of these overlay styles.</p>
+    </div>
+    <a class="button" href="/new">CREATE PERSONAL SCOREBOARD</a>
+  </section>
+  <p class="note">For OBS, add the overlay URL as a Browser Source. Keep your control link private; overlay links are safe to show on stream.</p>
+</main>
+</body>
+</html>

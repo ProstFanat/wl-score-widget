@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoreboard Control</title>
+<style>
+  :root { color-scheme:dark; --gold:#e8c77e; --cyan:#78e6df; }
+  * { box-sizing:border-box; }
+  body { min-height:100vh; margin:0; padding:20px; background:radial-gradient(ellipse at 50% -10%,#18303a 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  .panel { width:min(390px,100%); margin:0 auto; padding:22px; border:1px solid rgba(232,199,126,.42); border-radius:18px; background:rgba(12,25,34,.92); box-shadow:0 18px 55px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.06); }
+  .eyebrow { color:var(--cyan); font-size:9px; font-weight:800; letter-spacing:1.6px; }
+  h1 { margin:6px 0 2px; color:#fff0c4; font-size:20px; }
+  .subtitle { margin:0; color:#98aab2; font-size:10px; font-weight:700; letter-spacing:1px; }
+  .unlock { margin-top:18px; }
+  .unlock label { display:block; margin-bottom:6px; color:#c3cfd0; font-size:11px; font-weight:700; }
+  .unlock input { width:100%; padding:11px; border:1px solid #354851; border-radius:8px; background:#08131b; color:#fff; font:600 15px "Segoe UI",Arial,sans-serif; }
+  .unlock button { width:100%; min-height:43px; margin-top:9px; border:0; border-radius:9px; color:#102029; background:linear-gradient(135deg,#fff0c4,#d8ad55); font:800 13px "Segoe UI",Arial,sans-serif; cursor:pointer; }
+  [hidden] { display:none !important; }
+  .score { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; margin:20px 0; padding:15px 12px; border-radius:12px; background:linear-gradient(110deg,rgba(232,199,126,.08),rgba(120,230,223,.045)); text-align:center; }
+  .score-value { color:#fff0c4; font-size:36px; font-weight:850; line-height:1; }
+  .score-value.loss { color:#d8f5f1; }
+  .score-label { margin-top:5px; color:#9aadb3; font-size:9px; font-weight:800; letter-spacing:1.8px; }
+  .dash { color:#53646b; font-size:24px; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button { width:100%; min-height:47px; border:0; border-radius:9px; cursor:pointer; font:800 14px "Segoe UI",Arial,sans-serif; }
+  button:focus-visible { outline:2px solid white; outline-offset:3px; }
+  .win { color:#102029; background:linear-gradient(135deg,#fff0c4,#d8ad55); }
+  .loss { color:#092022; background:linear-gradient(135deg,#a3f0e8,#53c6c0); }
+  .utility { color:#dce6e7; background:#20313b; font-size:12px; font-weight:700; }
+  .section { margin-top:20px; padding-top:17px; border-top:1px solid rgba(255,255,255,.09); }
+  .section-title { margin:0 0 11px; color:#c3cfd0; font-size:10px; font-weight:800; letter-spacing:1.7px; text-transform:uppercase; }
+  .fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  label { display:block; margin-bottom:6px; color:#9aadb3; font-size:11px; font-weight:650; }
+  input { width:100%; padding:10px; border:1px solid #354851; border-radius:8px; background:#08131b; color:#fff; font:700 19px "Segoe UI",Arial,sans-serif; text-align:center; }
+  .set { margin-top:11px; color:#102029; background:linear-gradient(135deg,#fff0c4,#d8ad55); }
+  .links { margin-top:18px; padding-top:15px; border-top:1px solid rgba(255,255,255,.09); }
+  .links a { display:block; margin-top:9px; color:#9beee7; font-size:12px; text-decoration:none; }
+  .links a:hover { text-decoration:underline; }
+  .error { min-height:16px; margin:10px 0 0; color:#ff9e91; font-size:11px; text-align:center; }
+  .hint { margin:14px 0 0; color:#81949b; font-size:11px; text-align:center; }
+</style>
+</head>
+<body>
+<main class="panel">
+  <div class="eyebrow">PRIVATE SCORE CONTROL</div>
+  <h1 id="name">Your scoreboard</h1>
+  <p class="subtitle">Private score controls</p>
+  <form class="unlock" id="unlock-form">
+    <label id="password-label" for="password">Enter your scoreboard password</label>
+    <input id="password" type="password" minlength="8" maxlength="128" required autocomplete="current-password">
+    <div id="confirm-field" hidden>
+      <label for="confirm-password">Confirm your new password</label>
+      <input id="confirm-password" type="password" minlength="8" maxlength="128" autocomplete="new-password">
+    </div>
+    <button id="unlock-button" type="submit">Unlock controls</button>
+  </form>
+  <div id="controls" hidden>
+  <section class="score" aria-label="Current record" aria-live="polite">
+    <div><div class="score-value" id="w">0</div><div class="score-label">WINS</div></div>
+    <span class="dash">—</span>
+    <div><div class="score-value loss" id="l">0</div><div class="score-label">LOSSES</div></div>
+  </section>
+  <div class="actions">
+    <button class="win" onclick="runAction('win')">+ WIN&nbsp; (W)</button>
+    <button class="loss" onclick="runAction('loss')">+ LOSS&nbsp; (L)</button>
+    <button class="utility" onclick="runAction('undo')">Undo last&nbsp; (U)</button>
+    <button class="utility" onclick="if(confirm('Reset your scoreboard?'))runAction('reset')">Reset run</button>
+  </div>
+  <section class="section">
+    <h2 class="section-title">Set record manually</h2>
+    <div class="fields">
+      <div><label for="sw">Wins</label><input id="sw" type="number" min="0" max="999" inputmode="numeric"></div>
+      <div><label for="sl">Losses</label><input id="sl" type="number" min="0" max="999" inputmode="numeric"></div>
+    </div>
+    <button class="set" onclick="setValues()">Update record</button>
+  </section>
+  <nav class="links" id="links"></nav>
+  </div>
+  <p class="error" id="error" role="status" aria-live="polite"></p>
+  <p class="hint" id="hint" hidden>Keyboard: W = win · L = loss · U = undo</p>
+</main>
+<script>
+  const token = location.pathname.split('/').pop();
+  let password = '';
+  let passwordSetup = false;
+
+  async function act(action, query = '') {
+      const response = await fetch(`/api/rooms/${token}/${action}${query}`, {
+        method:'POST',
+        headers:{ 'x-scoreboard-password':password },
+      });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+    document.getElementById('error').textContent = '';
+  }
+  function runAction(action, query = '') {
+    act(action, query).catch(error => {
+      document.getElementById('error').textContent = `Could not update score: ${error.message}`;
+    });
+  }
+  function update(state) {
+    document.getElementById('w').textContent = state.wins;
+    document.getElementById('l').textContent = state.losses;
+    for (const [id, value] of [['sw', state.wins], ['sl', state.losses]]) {
+      const input = document.getElementById(id);
+      if (document.activeElement !== input) input.value = value;
+    }
+  }
+  function setValues() {
+    const query = new URLSearchParams();
+    const wins = document.getElementById('sw').value;
+    const losses = document.getElementById('sl').value;
+    if (wins !== '') query.set('wins', wins);
+    if (losses !== '') query.set('losses', losses);
+    runAction('set', '?' + query);
+    document.activeElement.blur();
+  }
+
+  for (const id of ['sw', 'sl']) {
+    document.getElementById(id).addEventListener('keydown', event => {
+      if (event.key === 'Enter') setValues();
+    });
+  }
+  addEventListener('keydown', event => {
+    if (event.target.tagName === 'INPUT') return;
+    const key = event.key.toLowerCase();
+    if (key === 'w') runAction('win');
+    else if (key === 'l') runAction('loss');
+    else if (key === 'u') runAction('undo');
+  });
+
+  document.getElementById('unlock-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = document.getElementById('unlock-button');
+    const error = document.getElementById('error');
+    password = document.getElementById('password').value;
+    if (passwordSetup && password !== document.getElementById('confirm-password').value) {
+      error.textContent = 'Passwords do not match.';
+      return;
+    }
+    button.disabled = true;
+    error.textContent = '';
+    try {
+      if (passwordSetup) {
+        const setupResponse = await fetch(`/api/rooms/${token}/password`, {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({ password }),
+        });
+        const setupData = await setupResponse.json();
+        if (!setupResponse.ok) throw new Error(setupData.error || `Request failed (${setupResponse.status})`);
+        passwordSetup = false;
+      }
+      const response = await fetch(`/api/rooms/${token}`, {
+        headers:{ 'x-scoreboard-password':password },
+      });
+      const data = await response.json();
+      if (response.status === 428) {
+        passwordSetup = true;
+        document.getElementById('password-label').textContent = 'Create a password for this scoreboard';
+        document.getElementById('password').autocomplete = 'new-password';
+        document.getElementById('confirm-field').hidden = false;
+        document.getElementById('unlock-button').textContent = 'Set password';
+        error.textContent = 'This scoreboard predates password protection. Set a password to unlock its controls.';
+        password = '';
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+        return;
+      }
+      if (!response.ok) throw new Error(response.status === 401 ? 'Incorrect password. Please try again.' : data.error || `Request failed (${response.status})`);
+      document.title = `${data.name} · Score Control`;
+      document.getElementById('name').textContent = data.name;
+      update(data);
+      const links = document.getElementById('links');
+      for (const [theme, label] of [['classic', 'Classic overlay'], ['halloween', 'Halloween overlay'], ['champions', 'Champions overlay']]) {
+        const link = document.createElement('a');
+        link.href = data.overlays[theme];
+        link.textContent = `Open ${label} ↗`;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        links.appendChild(link);
+      }
+      new EventSource(`/room/${data.viewId}/events`).onmessage = event => update(JSON.parse(event.data));
+      document.getElementById('unlock-form').hidden = true;
+      document.getElementById('controls').hidden = false;
+      document.getElementById('hint').hidden = false;
+    } catch (cause) {
+      error.textContent = cause.message;
+      password = '';
+      document.getElementById('password').value = '';
+      document.getElementById('confirm-password').value = '';
+      document.getElementById('password').focus();
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
