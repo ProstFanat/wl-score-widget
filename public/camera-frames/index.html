@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071019">
+<title>Camera Frames · Scoreboard Studio</title>
+<style>
+  :root { color-scheme:dark; --orange:#ff8733; --cyan:#78e6df; }
+  * { box-sizing:border-box; }
+  body { min-height:100vh; margin:0; padding:30px 18px; background:radial-gradient(ellipse at 50% -10%,#211b1b 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  main { width:min(980px,100%); margin:0 auto; }
+  .back { color:#9beee7; font-size:12px; text-decoration:none; }
+  .eyebrow { margin-top:25px; color:var(--orange); font-size:10px; font-weight:850; letter-spacing:2px; }
+  h1 { margin:8px 0; color:#fff0c4; font-size:clamp(30px,5vw,46px); }
+  .intro { max-width:700px; margin:0; color:#aab9be; font-size:14px; line-height:1.6; }
+  .frame-card { margin-top:25px; padding:18px; border:1px solid rgba(255,135,51,.32); border-radius:16px; background:rgba(12,25,34,.82); box-shadow:0 18px 50px rgba(0,0,0,.24); }
+  .frame-card h2 { margin:0 0 5px; color:#fff4e8; font-size:17px; }
+  .frame-card p { margin:0; color:#9eafb5; font-size:12px; line-height:1.55; }
+  .preview { position:relative; width:100%; aspect-ratio:16/9; margin-top:15px; overflow:hidden; border:1px solid rgba(255,255,255,.12); border-radius:9px; background:repeating-conic-gradient(#17242b 0% 25%,#101c23 0% 50%) 50% / 22px 22px; }
+  iframe { display:block; width:100%; height:100%; border:0; }
+  .source-row { display:flex; align-items:center; gap:10px; margin-top:15px; }
+  .source-url { min-width:0; flex:1; padding:10px 12px; border:1px solid #34464d; border-radius:8px; background:#08131b; color:#cfe1df; font:12px ui-monospace,monospace; }
+  button { min-height:39px; padding:0 14px; border:0; border-radius:8px; background:linear-gradient(135deg,#ffc15b,#ff7a24); color:#271407; font:800 11px "Segoe UI",Arial,sans-serif; cursor:pointer; }
+  button:hover { filter:brightness(1.08); }
+  .instructions { margin-top:12px !important; }
+  @media (max-width:560px) { body { padding:23px 14px; } .frame-card { padding:13px; } .source-row { align-items:stretch; flex-direction:column; } button { width:100%; } }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="/">← Scoreboard Studio</a>
+  <div class="eyebrow">STREAM OVERLAYS · CAMERA FRAMES</div>
+  <h1>Frame your camera.</h1>
+  <p class="intro">Decorative transparent frames designed to sit over your webcam in OBS or another streaming app. More themed frames can be added here over time.</p>
+  <article class="frame-card">
+    <h2>Halloween Ember</h2>
+    <p>Glowing orange trim, animated jack-o’-lanterns, drifting embers, bats, and detailed corner cobwebs.</p>
+    <div class="preview"><iframe src="/camera-frames/halloween" title="Animated Halloween camera frame preview"></iframe></div>
+    <div class="source-row">
+      <input class="source-url" id="source-url" aria-label="Halloween camera frame URL" readonly>
+      <button id="copy-url" type="button">Copy browser-source URL</button>
+    </div>
+    <p class="instructions">Add this URL as an OBS Browser Source and size it to match your camera. The middle stays transparent; set the source canvas to your camera frame’s dimensions.</p>
+  </article>
+</main>
+<script>
+  const url = new URL('/camera-frames/halloween', location.origin).href;
+  document.getElementById('source-url').value = url;
+  document.getElementById('copy-url').addEventListener('click', async event => {
+    try {
+      await navigator.clipboard.writeText(url);
+      event.currentTarget.textContent = 'Copied';
+    } catch (error) {
+      document.getElementById('source-url').select();
+      document.getElementById('source-url').setCustomValidity('Clipboard access failed. Copy the selected URL manually.');
+      document.getElementById('source-url').reportValidity();
+      console.error('Could not copy camera frame URL:', error);
+    }
+  });
+</script>
+</body>
+</html>

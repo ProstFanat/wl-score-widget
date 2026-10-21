@@ -79,6 +79,8 @@ const pages = {
   '/champions/control': 'controls/default.html',
   '/new': 'rooms/create.html',
   '/find-room': 'rooms/find.html',
+  '/camera-frames': 'camera-frames/index.html',
+  '/camera-frames/halloween': 'camera-frames/halloween.html',
   '/preview/default': 'rooms/overlay.html',
   '/preview/halloween': 'rooms/overlay.html',
   '/preview/champions': 'rooms/overlay.html',
