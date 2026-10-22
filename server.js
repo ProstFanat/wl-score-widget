@@ -73,6 +73,7 @@ const pages = {
   '/': 'index.html',
   '/halloween': 'overlays/halloween.html',
   '/halloween/control': 'controls/halloween.html',
+  '/phoenix-overlay': 'overlays/phoenix-overlay.html',
   '/default': 'overlays/default.html',
   '/default/control': 'controls/default.html',
   '/champions': 'overlays/default.html',
@@ -700,6 +701,11 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && (url === '/bird.png' || url === '/assets/bird.png')) {
     res.writeHead(200, { 'Content-Type': 'image/png' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/bird.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/phoenix.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/phoenix.png')));
   }
 
   if (req.method === 'GET' && url === '/assets/Happy%20Holidays.gif') {

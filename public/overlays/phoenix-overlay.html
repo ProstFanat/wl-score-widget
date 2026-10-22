@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phoenix Score Overlay</title>
+<style>
+  :root {
+    color-scheme:dark;
+    --orange:#ff6a16;
+    --gold:#ffb347;
+    --win:#61ed87;
+    --win-bright:#b8ffc9;
+    --pink:#ed35c9;
+    --violet:#991dff;
+    --overlay-width:440px;
+  }
+  html, body { margin:0; background:transparent; color:#fff; font-family:"Segoe UI",Arial,sans-serif; }
+  .wrap { display:inline-block; padding:20px; }
+  .card {
+    position:relative;
+    box-sizing:border-box;
+    width:min(var(--overlay-width),calc(100vw - 24px));
+    overflow:hidden;
+    padding:9px 20px 13px;
+    border:1px solid rgba(255,106,22,.72);
+    border-radius:15px;
+    background:transparent;
+    box-shadow:0 0 18px rgba(255,65,170,.14);
+    animation:border-glow 4s ease-in-out infinite;
+  }
+  .card::before { position:absolute; inset:5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
+  .card::after { position:absolute; top:0; right:0; width:50%; height:2px; background:linear-gradient(90deg,transparent,var(--pink),var(--gold)); content:""; }
+  .scoreline { position:relative; z-index:2; display:grid; grid-template-columns:1fr 170px 1fr; align-items:center; min-height:80px; }
+  .side { display:flex; align-items:center; gap:9px; }
+  .side.loss { grid-column:3; justify-content:flex-end; }
+  .number { color:var(--orange); font-size:43px; font-weight:850; line-height:.95; letter-spacing:-2px; text-shadow:0 0 18px rgba(255,106,22,.48); }
+  .loss .number { color:var(--violet); text-shadow:0 0 18px rgba(153,29,255,.42); }
+  .phoenix-center { position:absolute; z-index:0; inset:0; display:flex; align-items:center; justify-content:center; min-width:0; pointer-events:none; transform:translateY(-1px); }
+  .phoenix-logo { position:relative; z-index:2; display:block; width:75%; max-width:300px; height:auto; opacity:.98; filter:drop-shadow(0 0 5px #ff4d00) drop-shadow(0 0 11px #ff00a8); animation:glow 4s ease-in-out infinite; }
+  .fire { position:absolute; top:50%; z-index:1; width:45%; height:18px; border-radius:999px; filter:blur(7px); transform:translateY(-50%); }
+  .fire.left { right:52%; background:linear-gradient(90deg,transparent,rgba(255,80,0,.9),rgba(255,0,180,.8)); animation:flow-left 3s linear infinite; }
+  .fire.right { left:52%; background:linear-gradient(90deg,rgba(255,0,180,.8),rgba(255,80,0,.9),transparent); animation:flow-right 3s linear infinite; }
+  .progress-row { position:relative; z-index:2; display:flex; align-items:center; gap:9px; margin-top:0; }
+  .segments { display:grid; flex:1; grid-template-columns:repeat(15,1fr); gap:4px; }
+  .segment { height:4px; border-radius:4px; background:rgba(236,220,244,.18); }
+  .segment.win { background:linear-gradient(90deg,var(--win),var(--win-bright)); box-shadow:0 0 7px rgba(97,237,135,.58); }
+  .segment.loss { background:linear-gradient(90deg,#ff354f,#ff9080); box-shadow:0 0 7px rgba(255,67,91,.58); }
+  .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
+  .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
+  .spark { position:absolute; z-index:1; width:4px; height:4px; border-radius:50%; background:var(--gold); box-shadow:0 0 8px #ff6600; pointer-events:none; }
+  .spark.one { top:14px; left:46%; animation:spark-rise 3s infinite; }
+  .spark.two { top:27px; left:53%; animation:spark-rise 4s 1s infinite; }
+  .spark.three { top:20px; left:49%; animation:spark-rise 3.5s 2s infinite; }
+  @keyframes border-glow {
+    0%,100% { border-color:rgba(255,106,22,.55); box-shadow:0 0 13px rgba(255,65,170,.08); }
+    50% { border-color:#ff9b35; box-shadow:0 0 26px rgba(255,65,170,.3); }
+  }
+  @keyframes glow {
+    0%,100% { filter:drop-shadow(0 0 4px #ff4d00) drop-shadow(0 0 10px #ff00ff); }
+    50% { filter:drop-shadow(0 0 10px #ff8800) drop-shadow(0 0 24px #ff00ff) drop-shadow(0 0 32px #ff5500); }
+  }
+  @keyframes flow-left { 0%,100% { width:40%; filter:blur(6px) brightness(1); } 50% { width:47%; filter:blur(9px) brightness(1.4); } }
+  @keyframes flow-right { 0%,100% { width:40%; filter:blur(6px) brightness(1); } 50% { width:47%; filter:blur(9px) brightness(1.4); } }
+  @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
+  @keyframes card-flash { 45% { filter:brightness(1.6); box-shadow:0 0 34px rgba(255,75,151,.4); } }
+  @keyframes spark-rise { 0% { transform:translateY(20px); opacity:0; } 20% { opacity:1; } 100% { transform:translateY(-34px); opacity:0; } }
+  @media (max-width:500px) {
+    .wrap { padding:12px; }
+    .card { padding:8px 13px 13px; }
+    .scoreline { grid-template-columns:1fr 140px 1fr; min-height:112px; }
+    .phoenix-logo { width:75%; max-width:255px; }
+    .side { gap:6px; }
+    .number { font-size:35px; }
+    .segments { gap:2px; }
+  }
+  @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card" id="card" aria-label="Phoenix wins and losses">
+    <div class="scoreline">
+      <div class="side"><span class="number" id="w">0</span></div>
+      <div class="phoenix-center" aria-label="Phoenix">
+        <i class="fire left" aria-hidden="true"></i>
+        <img class="phoenix-logo" src="/assets/phoenix.png" alt="Phoenix">
+        <i class="fire right" aria-hidden="true"></i>
+      </div>
+      <div class="side loss"><span class="number" id="l">0</span></div>
+    </div>
+    <div class="progress-row">
+      <div class="segments" id="segments" aria-label="Match result history"></div>
+    </div>
+    <i class="spark one" aria-hidden="true"></i>
+    <i class="spark two" aria-hidden="true"></i>
+    <i class="spark three" aria-hidden="true"></i>
+  </section>
+</div>
+<script>
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const segments = document.getElementById('segments');
+  for (let i = 0; i < 15; i++) {
+    const segment = document.createElement('span');
+    segment.className = 'segment';
+    segments.appendChild(segment);
+  }
+  let first = true;
+
+  function updateScore(id, value) {
+    const number = document.getElementById(id);
+    if (number.textContent === String(value)) return;
+    number.textContent = value;
+    if (first) return;
+    number.classList.remove('tick');
+    void number.offsetWidth;
+    number.classList.add('tick');
+    const card = document.getElementById('card');
+    card.classList.remove('flash');
+    void card.offsetWidth;
+    card.classList.add('flash');
+  }
+
+  function render(state) {
+    updateScore('w', state.wins);
+    updateScore('l', state.losses);
+    const total = state.wins + state.losses;
+    const history = Array.isArray(state.history) && state.history.length === total
+      ? state.history
+      : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
+    [...segments.children].forEach((segment, index) => {
+      const result = history[index];
+      segment.classList.toggle('win', result === 'W');
+      segment.classList.toggle('loss', result === 'L');
+      segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
+    });
+    first = false;
+  }
+
+  if (new URLSearchParams(location.search).get('preview') === '1') {
+    if (window.self === window.top) {
+      const homeLink = document.createElement('a');
+      homeLink.href = '/';
+      homeLink.textContent = '← Scoreboard Studio';
+      homeLink.style.cssText = 'position:fixed;top:10px;left:12px;color:#ffb347;font:700 11px Segoe UI,Arial,sans-serif;text-decoration:none';
+      document.body.appendChild(homeLink);
+    }
+    render({ wins:5, losses:4, history:[...'WLWWLWWLL'], max:15 });
+  } else {
+    new EventSource(BASE + '/default/events').onmessage = event => render(JSON.parse(event.data));
+  }
+</script>
+</body>
+</html>
