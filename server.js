@@ -702,6 +702,11 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/bird.png')));
   }
 
+  if (req.method === 'GET' && url === '/assets/Happy%20Holidays.gif') {
+    res.writeHead(200, { 'Content-Type': 'image/gif' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Happy Holidays.gif')));
+  }
+
   res.writeHead(404); res.end();
 }
 

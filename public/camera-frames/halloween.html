@@ -30,6 +30,7 @@
   .corner.br { right:0; bottom:0; transform:scaleX(-1); }
   .corner-art { overflow:visible; }
   .corner-glow { transform-box:fill-box; transform-origin:center; animation:lantern-glow 3.6s ease-in-out infinite; }
+  .holiday-pumpkins { position:absolute; z-index:4; right:1.5%; bottom:0.0009%; width:clamp(100px,18vw,220px); height:auto; pointer-events:none; }
   .bat { position:absolute; z-index:2; width:clamp(22px,3vw,46px); color:#24142c; filter:drop-shadow(0 0 5px rgba(255,129,44,.6)); animation:bat-flight 8s ease-in-out infinite; }
   .bat.one { top:12%; left:31%; }
   .bat.two { top:22%; right:29%; width:clamp(16px,2vw,32px); animation-delay:-3.4s; animation-duration:10s; }
@@ -78,26 +79,6 @@
   <svg class="corner tl corner-art" viewBox="0 0 240 240" aria-hidden="true">
     <defs><filter id="glow"><feGaussianBlur stdDeviation="3"/></filter></defs>
   </svg>
-  <svg class="corner br corner-art" viewBox="0 0 240 240" aria-hidden="true">
-    <g class="corner-glow">
-      <path d="M34 154c-15-24-12-57 4-78 8-10 20-13 30-7 9-13 26-15 37-5 13-6 29 0 34 14 18 2 30 18 30 37 0 29-27 55-69 55-30 0-53-5-66-16Z" fill="#e86218" stroke="#ffbd56" stroke-width="4"/>
-      <path d="M92 67c-4-18 3-31 18-39 4 14 1 25-10 35" fill="#648c3c" stroke="#b6c46a" stroke-width="3"/>
-      <path d="m53 106 25 8-16 20-9-28Zm83 0-25 8 16 20 9-28Z" fill="#ffe47d"/>
-      <path d="m72 151 19-8 13 8 16-8 19 9-14 18H85l-13-19Z" fill="#ffe47d"/>
-      <path d="M51 86c-11 23-10 48 3 67M151 83c13 22 14 45 3 67" fill="none" stroke="#a93d16" stroke-width="4"/>
-    </g>
-    <path d="M180 45c-5-13 2-23 14-29-1 12-3 19-11 25m-4 4c-10-11-19-8-28-3 9 7 18 8 28 3Z" fill="#719149" stroke="#b6c46a" stroke-width="2"/>
-  </svg>
-  <svg class="corner bl corner-art" viewBox="0 0 240 240" aria-hidden="true">
-    <g class="corner-glow">
-      <path d="M34 154c-15-24-12-57 4-78 8-10 20-13 30-7 9-13 26-15 37-5 13-6 29 0 34 14 18 2 30 18 30 37 0 29-27 55-69 55-30 0-53-5-66-16Z" fill="#e86218" stroke="#ffbd56" stroke-width="4"/>
-      <path d="M92 67c-4-18 3-31 18-39 4 14 1 25-10 35" fill="#648c3c" stroke="#b6c46a" stroke-width="3"/>
-      <path d="m53 106 25 8-16 20-9-28Zm83 0-25 8 16 20 9-28Z" fill="#ffe47d"/>
-      <path d="m72 151 19-8 13 8 16-8 19 9-14 18H85l-13-19Z" fill="#ffe47d"/>
-      <path d="M51 86c-11 23-10 48 3 67M151 83c13 22 14 45 3 67" fill="none" stroke="#a93d16" stroke-width="4"/>
-    </g>
-    <path d="M180 45c-5-13 2-23 14-29-1 12-3 19-11 25m-4 4c-10-11-19-8-28-3 9 7 18 8 28 3Z" fill="#719149" stroke="#b6c46a" stroke-width="2"/>
-  </svg>
   <svg class="bat one" viewBox="0 0 64 40" aria-hidden="true"><path fill="currentColor" d="M2 9c9 0 14 4 18 10 3-10 8-14 12-15 4 1 9 5 12 15 4-6 9-10 18-10-4 7-4 13-3 19-8-5-13-5-18-1-3 3-6 6-9 11-3-5-6-8-9-11-5-4-10-4-18 1 1-6 1-12-3-19Z"/></svg>
   <svg class="bat two" viewBox="0 0 64 40" aria-hidden="true"><path fill="currentColor" d="M2 9c9 0 14 4 18 10 3-10 8-14 12-15 4 1 9 5 12 15 4-6 9-10 18-10-4 7-4 13-3 19-8-5-13-5-18-1-3 3-6 6-9 11-3-5-6-8-9-11-5-4-10-4-18 1 1-6 1-12-3-19Z"/></svg>
   <svg class="bat three" viewBox="0 0 64 40" aria-hidden="true"><path fill="currentColor" d="M2 9c9 0 14 4 18 10 3-10 8-14 12-15 4 1 9 5 12 15 4-6 9-10 18-10-4 7-4 13-3 19-8-5-13-5-18-1-3 3-6 6-9 11-3-5-6-8-9-11-5-4-10-4-18 1 1-6 1-12-3-19Z"/></svg>
@@ -129,6 +110,7 @@
       <path d="M2 2C17 24 35 43 59 61M2 2C27 16 50 31 78 42M2 2C14 32 25 56 41 82" stroke-width=".7" opacity=".55"/>
     </g>
   </svg>
+  <img class="holiday-pumpkins" src="/assets/Happy%20Holidays.gif" alt="Happy Holidays pumpkins">
   <i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i>
 </main>
 </body>
