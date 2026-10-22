@@ -147,7 +147,11 @@
     }
     render({ wins:5, losses:4, history:[...'WLWWLWWLL'], max:15 });
   } else {
-    new EventSource(BASE + '/default/events').onmessage = event => render(JSON.parse(event.data));
+    const personalRoom = location.pathname.match(/^\/room\/([a-f0-9]{32})\/phoenix$/);
+    const eventsUrl = personalRoom
+      ? `/room/${personalRoom[1]}/events`
+      : `${BASE}/default/events`;
+    new EventSource(eventsUrl).onmessage = event => render(JSON.parse(event.data));
   }
 </script>
 </body>
