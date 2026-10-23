@@ -23,13 +23,13 @@
     width:min(var(--overlay-width),calc(100vw - 24px));
     overflow:hidden;
     padding:9px 20px 13px;
-    border:1px solid rgba(255,106,22,.72);
+    border:3px solid rgba(255,106,22,.72);
     border-radius:15px;
     background:transparent;
     box-shadow:0 0 18px rgba(255,65,170,.14);
     animation:border-glow 4s ease-in-out infinite;
   }
-  .card::before { position:absolute; inset:5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
+  .card::before { position:absolute; inset:5px; border:3px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
   .card::after { position:absolute; top:0; right:0; width:50%; height:2px; background:linear-gradient(90deg,transparent,var(--pink),var(--gold)); content:""; }
   .scoreline { position:relative; z-index:2; display:grid; grid-template-columns:1fr 170px 1fr; align-items:center; min-height:80px; }
   .side { display:flex; align-items:center; gap:9px; }
@@ -43,9 +43,9 @@
   .fire.right { left:52%; background:linear-gradient(90deg,rgba(255,0,180,.8),rgba(255,80,0,.9),transparent); animation:flow-right 3s linear infinite; }
   .progress-row { position:relative; z-index:2; display:flex; align-items:center; gap:9px; margin-top:0; }
   .segments { display:grid; flex:1; grid-template-columns:repeat(15,1fr); gap:4px; }
-  .segment { height:4px; border-radius:4px; background:rgba(236,220,244,.18); }
-  .segment.win { background:linear-gradient(90deg,var(--win),var(--win-bright)); box-shadow:0 0 7px rgba(97,237,135,.58); }
-  .segment.loss { background:linear-gradient(90deg,#ff354f,#ff9080); box-shadow:0 0 7px rgba(255,67,91,.58); }
+  .segment { height:4px; border-radius:4px; background:rgba(236,220,244,.7); }
+  .segment.win { background:linear-gradient(90deg,var(--win),var(--win-bright)); box-shadow:0 0 7px rgba(97,237,135,.9); }
+  .segment.loss { background:linear-gradient(90deg,#ff354f,#ff9080); box-shadow:0 0 7px rgba(255,67,91,.9); }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
   .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
   .spark { position:absolute; z-index:1; width:4px; height:4px; border-radius:50%; background:var(--gold); box-shadow:0 0 8px #ff6600; pointer-events:none; }
