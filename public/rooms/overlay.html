@@ -30,22 +30,30 @@
   }
   .card::before { position:absolute; inset:5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
   .card::after { position:absolute; top:0; right:0; width:45%; height:2px; background:linear-gradient(90deg,transparent,var(--second),var(--accent)); content:""; }
-  .scoreline { display:grid; grid-template-columns:1fr 48px 1fr; align-items:center; }
+  .scoreline { position:relative; z-index:2; display:grid; grid-template-columns:1fr 48px 1fr; align-items:center; }
   .side { display:flex; align-items:center; gap:9px; }
   .side.loss { justify-content:flex-end; }
   .number { color:var(--second); font-size:43px; font-weight:850; line-height:.95; letter-spacing:-2px; text-shadow:0 0 18px color-mix(in srgb,var(--second) 32%,transparent); }
   .loss .number { color:#f5f8fa; text-shadow:0 0 18px color-mix(in srgb,var(--accent) 20%,transparent); }
+  .separator { display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:23px; text-align:center; }
   .separator { display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:23px; text-align:center; }
   .progress-row { display:flex; align-items:center; gap:9px; margin-top:11px; }
   .segments { display:grid; flex:1; grid-template-columns:repeat(15,1fr); gap:4px; }
   .segment { height:3px; border-radius:3px; background:rgba(236,240,244,.2); }
   .segment.win { background:linear-gradient(90deg,var(--accent),var(--accent-soft)); box-shadow:0 0 7px color-mix(in srgb,var(--accent) 50%,transparent); }
   .segment.loss { background:linear-gradient(90deg,#ff626f,#ff9a86); box-shadow:0 0 7px rgba(255,98,111,.55); }
-  .pumpkin { display:none; width:44px; height:40px; flex:none; filter:drop-shadow(0 0 8px rgba(255,117,37,.5)); animation:haunt 5s ease-in-out infinite; }
+  .pumpkin { display:block; width:100%; height:auto; filter:drop-shadow(0 0 9px rgba(255,117,37,.48)); }
+  .pumpkin-rain { position:absolute; z-index:1; inset:0; overflow:hidden; pointer-events:none; }
+  .pumpkin-drop { position:absolute; top:-40px; left:var(--x); width:var(--size); opacity:var(--opacity); animation:pumpkin-fall var(--duration) linear var(--delay) infinite; }
+  .score-divider { display:none; position:relative; justify-self:center; width:2px; height:38px; border-radius:2px; background:linear-gradient(180deg,transparent,#ffd09a,#bd83ff,transparent); box-shadow:0 0 8px rgba(255,135,51,.55); }
+  .score-divider::after { position:absolute; top:50%; left:50%; width:7px; height:7px; border:1px solid #ffd09a; background:#28142b; box-shadow:0 0 7px rgba(189,131,255,.8); content:""; transform:translate(-50%,-50%) rotate(45deg); }
   .card.halloween { --accent:#ff8733; --accent-soft:#ffd09a; --second:#ffbd75; --muted:#b1a0bd; }
-  .card.halloween .pumpkin { display:block; }
-  .card.halloween .separator { color:#ff9a52; }
+  .card.halloween .scoreline { grid-template-columns:1fr 24px 1fr; }
+  .card.halloween .separator { display:none; }
+  .card.halloween .score-divider { display:block; }
   .card.halloween .segment.win { background:linear-gradient(90deg,#9be86f,#e2ffad); box-shadow:0 0 7px rgba(155,232,111,.58); }
+  .card.halloween .progress-row { position:relative; z-index:2; }
+  @keyframes pumpkin-fall { from { transform:translate3d(0,0,0) rotate(-12deg); } to { transform:translate3d(var(--drift),var(--fall-distance),0) rotate(18deg); } }
   .card.results { width:max-content; max-width:calc(100vw - 24px); padding:8px 12px; }
   .result-list { position:relative; display:flex; width:max-content; max-width:100%; flex-direction:column; gap:1px; }
   .result-row { display:flex; width:max-content; max-width:100%; align-items:center; gap:6px; min-height:25px; padding:2px 0; border-bottom:1px solid color-mix(in srgb,var(--accent) 18%,transparent); font-size:15px; font-weight:850; line-height:1; }
@@ -68,17 +76,25 @@
     .side { gap:6px; }
     .number { font-size:35px; }
     .segments { gap:2px; }
-    .pumpkin { width:36px; height:33px; }
   }
-  @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+  @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; }
+    .pumpkin-drop { top:var(--resting-y); animation:none; opacity:.3; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="Personal wins and losses">
+    <div class="pumpkin-rain" id="pumpkin-rain" aria-hidden="true"></div>
     <div class="scoreline" id="scoreline">
       <div class="side"><span class="number" id="w">0</span></div>
-      <span class="separator" id="separator">—<svg class="pumpkin" viewBox="0 0 64 56" role="img" aria-label="Glowing jack-o'-lantern">
+      <span class="separator" aria-hidden="true">—</span>
+      <span class="score-divider" aria-hidden="true"></span>
+      <div class="side loss"><span class="number" id="l">0</span></div>
+    </div>
+    <template id="pumpkin-template">
+      <svg class="pumpkin" viewBox="0 0 64 56">
         <defs>
           <linearGradient id="gourd" x1="12" y1="11" x2="51" y2="47" gradientUnits="userSpaceOnUse">
             <stop stop-color="#ffbd56"/><stop offset=".48" stop-color="#ff812b"/><stop offset="1" stop-color="#c74416"/>
@@ -92,9 +108,10 @@
         <path d="M32 14c-4 7-4 27 0 38M17 18c-5 8-5 22 1 29M47 18c5 8 5 22-1 29" fill="none" stroke="#a83c1b" stroke-opacity=".55" stroke-width="2"/>
         <path d="m15 25 13 3-7 8-6-11Zm34 0-13 3 7 8 6-11Z" fill="url(#glow)"/>
         <path d="m24 41 5-3 3 3 4-3 7 3-4 5H28l-4-5Z" fill="url(#glow)"/>
-      </svg></span>
-      <div class="side loss"><span class="number" id="l">0</span></div>
-    </div>
+        <path d="m29 39 1 5m8-5-1 5" stroke="#a83c1b" stroke-width="1.2"/>
+        <path d="M13 20c-3-2-5-1-7 1m45-1c3-2 5-1 7 1" fill="none" stroke="#ffcb70" stroke-linecap="round" stroke-width="1.5"/>
+      </svg>
+    </template>
     <div class="progress-row" id="progress-row">
       <div class="segments" id="segments" aria-label="Match result history"></div>
     </div>
@@ -120,7 +137,37 @@
     document.getElementById('result-list').hidden = false;
   }
   if (theme === 'halloween') {
-    document.getElementById('separator').firstChild.textContent = '';
+    const pumpkinRain = document.getElementById('pumpkin-rain');
+    const pumpkinTemplate = document.getElementById('pumpkin-template');
+    const pumpkinCount = 14 + Math.floor(Math.random() * 7);
+    if (!isResults) {
+      for (let i = 0; i < pumpkinCount; i++) {
+        const drop = document.createElement('span');
+        const pumpkin = pumpkinTemplate.content.firstElementChild.cloneNode(true);
+        const duration = 5 + Math.random() * 6;
+        const size = 16 + Math.random() * 17;
+        const availableWidth = Math.max(0, pumpkinRain.clientWidth - size);
+        const x = ((i + Math.random()) / pumpkinCount) * availableWidth;
+        const gradientIds = [`room-gourd-${i}`, `room-glow-${i}`];
+        pumpkin.querySelector('#gourd').id = gradientIds[0];
+        pumpkin.querySelector('#glow').id = gradientIds[1];
+        pumpkin.innerHTML = pumpkin.innerHTML
+          .replaceAll('url(#gourd)', `url(#${gradientIds[0]})`)
+          .replaceAll('url(#glow)', `url(#${gradientIds[1]})`);
+        pumpkin.setAttribute('aria-hidden', 'true');
+        drop.className = 'pumpkin-drop';
+        drop.style.setProperty('--x', `${x}px`);
+        drop.style.setProperty('--size', `${size}px`);
+        drop.style.setProperty('--opacity', `${0.28 + Math.random() * 0.35}`);
+        drop.style.setProperty('--duration', `${duration}s`);
+        drop.style.setProperty('--delay', `${-Math.random() * duration}s`);
+        drop.style.setProperty('--drift', `${-35 + Math.random() * 70}px`);
+        drop.style.setProperty('--fall-distance', `${pumpkinRain.clientHeight + 60}px`);
+        drop.style.setProperty('--resting-y', `${Math.random() * 75}%`);
+        drop.appendChild(pumpkin);
+        pumpkinRain.appendChild(drop);
+      }
+    }
   }
 
   const segments = document.getElementById('segments');
