@@ -61,8 +61,8 @@
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
   .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
   @keyframes border-glow {
-    0%,100% { border-color:rgba(232,199,126,.52); box-shadow:0 0 12px rgba(120,230,223,.06); }
-    50% { border-color:var(--gold-bright); box-shadow:0 0 24px rgba(120,230,223,.24); }
+    0%,100% { border-color:rgba(232,199,126,.9); box-shadow:0 0 12px rgba(120,230,223,.5); }
+    50% { border-color:var(--gold-bright); box-shadow:0 0 24px rgba(120,230,223,.7); }
   }
   @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
   @keyframes card-flash { 45% { filter:brightness(1.55); box-shadow:0 0 32px rgba(120,230,223,.35); } }
