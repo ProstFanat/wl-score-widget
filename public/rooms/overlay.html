@@ -22,13 +22,13 @@
     width:min(var(--overlay-width),calc(100vw - 24px));
     overflow:hidden;
     padding:15px 20px 13px;
-    border:1px solid color-mix(in srgb,var(--accent) 65%,transparent);
+    border:3px solid color-mix(in srgb,var(--accent) 90%,transparent);
     border-radius:15px;
     background:transparent;
     box-shadow:0 0 18px color-mix(in srgb,var(--accent) 13%,transparent);
     animation:border-glow 4s ease-in-out infinite;
   }
-  .card::before { position:absolute; inset:5px; border:1px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
+  .card::before { position:absolute; inset:5px; border:3px solid rgba(255,255,255,.07); border-radius:10px; content:""; pointer-events:none; }
   .card::after { position:absolute; top:0; right:0; width:45%; height:2px; background:linear-gradient(90deg,transparent,var(--second),var(--accent)); content:""; }
   .scoreline { position:relative; z-index:2; display:grid; grid-template-columns:1fr 48px 1fr; align-items:center; }
   .side { display:flex; align-items:center; gap:9px; }
@@ -63,8 +63,8 @@
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
   .card.flash { animation:border-glow 4s ease-in-out infinite,card-flash .55s ease-out; }
   @keyframes border-glow {
-    0%,100% { border-color:color-mix(in srgb,var(--accent) 58%,transparent); box-shadow:0 0 12px color-mix(in srgb,var(--accent) 10%,transparent); }
-    50% { border-color:var(--accent); box-shadow:0 0 23px color-mix(in srgb,var(--accent) 34%,transparent); }
+    0%,100% { border-color:color-mix(in srgb,var(--accent) 90%,transparent); box-shadow:0 0 13px color-mix(in srgb,var(--accent) 50%,transparent); }
+    50% { border-color:var(--accent-soft); box-shadow:0 0 26px color-mix(in srgb,var(--accent) 70%,transparent); }
   }
   @keyframes score-pop { 0% { transform:translateY(-16px) scale(1.2); opacity:0; } 100% { transform:translateY(0) scale(1); opacity:1; } }
   @keyframes card-flash { 45% { filter:brightness(1.6); box-shadow:0 0 34px color-mix(in srgb,var(--accent) 42%,transparent); } }
