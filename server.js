@@ -74,6 +74,7 @@ const pages = {
   '/halloween': 'overlays/halloween.html',
   '/halloween/control': 'controls/halloween.html',
   '/phoenix-overlay': 'overlays/phoenix-overlay.html',
+  '/phoenix-upg': 'overlays/phoenix-upg.html',
   '/default': 'overlays/default.html',
   '/default/control': 'controls/default.html',
   '/champions': 'overlays/default.html',
@@ -545,6 +546,15 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-overlay.html')));
   }
 
+  const phoenixUpgRoomRoute = url.match(/^\/room\/([a-f0-9]{32})\/phoenix-upg$/);
+  if (req.method === 'GET' && phoenixUpgRoomRoute) {
+    if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
+    const state = await getBoard(`room:${phoenixUpgRoomRoute[1]}`);
+    if (!state) return publicError(res, 404, 'Scoreboard not found');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
+  }
+
   const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions)(?:\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
@@ -715,6 +725,11 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/phoenix.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/phoenix.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/phoenix_upg.gif') {
+    res.writeHead(200, { 'Content-Type': 'image/gif', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/phoenix_upg.gif')));
   }
 
   if (req.method === 'GET' && url === '/assets/ComfyUI_00002_.mp4') {
