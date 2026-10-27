@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Champions Results Overlay</title>
+<style>
+  :root {
+    color-scheme:dark;
+    --accent:#c9d3d8;
+    --accent-soft:#f2f5f6;
+    --second:#8e9aa1;
+    --bg:12,14,16;
+  }
+  html, body { margin:0; background:transparent; color:#fff; font-family:"Segoe UI",Arial,sans-serif; }
+  .wrap { display:inline-block; padding:20px; }
+  .card {
+    position:relative;
+    box-sizing:border-box;
+    width:max-content;
+    max-width:calc(100vw - 24px);
+    padding:6px 12px;
+    overflow:hidden;
+    isolation:isolate;
+    border:2px solid color-mix(in srgb,var(--accent) 75%,transparent);
+    border-radius:14px;
+    background:rgba(var(--bg),.55);
+    backdrop-filter:blur(3px);
+    animation:card-pulse 6s ease-in-out infinite;
+  }
+  .bg { position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; border-radius:inherit; }
+  .bg::before {
+    content:""; position:absolute; inset:-40%;
+    background:
+      radial-gradient(circle at 25% 30%, color-mix(in srgb,var(--accent) 34%,transparent), transparent 42%),
+      radial-gradient(circle at 78% 72%, color-mix(in srgb,var(--second) 26%,transparent), transparent 40%);
+  }
+  .bg::after {
+    content:""; position:absolute; inset:-20px 0;
+    background:repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 2px, transparent 2px 14px);
+  }
+  .sweep {
+    position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent 0%, color-mix(in srgb,var(--accent-soft) 14%,transparent) 50%, transparent 100%);
+    transform:translateX(-100%);
+    opacity:0;
+    animation:sweep 9s linear infinite;
+  }
+  .result-list { display:flex; width:max-content; max-width:100%; flex-direction:column; align-items:stretch; }
+  .result-row {
+    display:flex; justify-content:center; align-items:center; gap:6px;
+    height:27px; box-sizing:border-box; padding:3px 0; overflow:hidden;
+    border-bottom:1px solid color-mix(in srgb,var(--accent) 20%,transparent);
+    font-size:16px; font-weight:850; line-height:1;
+    text-shadow:0 1px 3px rgba(0,0,0,.6);
+  }
+  .result-row:last-child { border-bottom:0; }
+  .result-row.enter { animation:row-in .6s cubic-bezier(.2,.8,.2,1) both; }
+  .result-row.leave { animation:row-out .35s ease-in both; }
+  .result-row.enter .result-score { animation:score-flash 1.2s ease-out both; }
+  .result-score { color:var(--accent-soft); font-variant-numeric:tabular-nums; }
+  .result-count { color:var(--second); font-size:11px; font-weight:800; }
+  .result-count.bump { animation:count-bump .5s ease-out; }
+  @keyframes row-in {
+    from { height:0; padding-top:0; padding-bottom:0; opacity:0; transform:translateX(-18px); }
+    60%  { opacity:1; }
+    to   { height:27px; padding-top:3px; padding-bottom:3px; opacity:1; transform:none; }
+  }
+  @keyframes row-out {
+    from { height:27px; opacity:1; }
+    to   { height:0; padding-top:0; padding-bottom:0; opacity:0; transform:translateX(18px); }
+  }
+  @keyframes score-flash { 0%,30% { color:#fff; text-shadow:0 0 12px var(--accent); } 100% { text-shadow:0 1px 3px rgba(0,0,0,.6); } }
+  @keyframes count-bump { 40% { transform:scale(1.5); color:#fff; } }
+  @keyframes card-pulse {
+    0%,100% { box-shadow:0 0 12px color-mix(in srgb,var(--accent) 18%,transparent); }
+    50% { box-shadow:0 0 22px color-mix(in srgb,var(--accent) 38%,transparent); }
+  }
+  @keyframes sweep {
+    0% { transform:translateX(-100%); opacity:0; }
+    4% { opacity:1; }
+    26% { opacity:1; }
+    30%,100% { transform:translateX(100%); opacity:0; }
+  }
+  @media (prefers-reduced-motion:reduce) { .card, .bg *, .result-row { animation:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card" id="card" aria-label="Champions results">
+    <div class="bg"><div class="sweep"></div></div>
+    <div class="result-list" id="result-list"></div>
+  </section>
+</div>
+<script>
+  const pathParts = location.pathname.split('/');
+  const roomMatch = location.pathname.match(/^\/room\/([a-f0-9]{32})\//);
+  const isPreview = pathParts[1] === 'preview';
+  const groupResults = new URLSearchParams(location.search).get('group') === '1';
+
+  const list = document.getElementById('result-list');
+  const rowsByKey = new Map();
+  let previous = [];
+  let nextId = 0;
+  let firstRender = true;
+  let lastJson = '';
+
+  // results carry no ids, so reuse the ids of the previous list where it overlaps the new one
+  function assignIds(results) {
+    const same = (a, b) => a.wins === b.wins && a.losses === b.losses;
+    for (let offset = 0; offset <= previous.length; offset++) {
+      const overlap = previous.length - offset;
+      if (overlap > results.length) continue;
+      if (overlap === 0 && previous.length) break;
+      if (previous.slice(offset).every((p, i) => same(p, results[i]))) {
+        return results.map((r, i) => ({ ...r, id:i < overlap ? previous[offset + i].id : nextId++ }));
+      }
+    }
+    return results.map(r => ({ ...r, id:nextId++ }));
+  }
+
+  function makeRow(item, count) {
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    const score = document.createElement('div');
+    score.className = 'result-score';
+    score.textContent = `${item.wins}-${item.losses}`;
+    row.append(score);
+    return row;
+  }
+
+  function setCount(row, count) {
+    let badge = row.querySelector('.result-count');
+    if (count <= 1) { if (badge) badge.remove(); return; }
+    const text = `x${count}`;
+    if (!badge) { badge = document.createElement('span'); badge.className = 'result-count'; row.appendChild(badge); }
+    if (badge.textContent !== text) {
+      badge.textContent = text;
+      badge.title = `${count} runs with this score`;
+      badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
+    }
+  }
+
+  function renderResults(results) {
+    if (!Array.isArray(results)) return;
+    const json = JSON.stringify(results);
+    if (json === lastJson) return;
+    lastJson = json;
+    const clean = results.slice(-15).map(r => ({ wins:Number(r.wins), losses:Number(r.losses) }));
+    const withIds = assignIds(clean);
+    previous = withIds;
+    const recent = [...withIds].reverse();
+    const items = groupResults
+      ? [...recent.reduce((groups, r) => {
+        const key = `g${r.wins}-${r.losses}`;
+        const existing = groups.get(key);
+        if (existing) existing.count++;
+        else groups.set(key, { ...r, key, count:1 });
+        return groups;
+      }, new Map()).values()]
+      : recent.map(r => ({ ...r, key:`r${r.id}`, count:1 }));
+
+    const wanted = new Set(items.map(i => i.key));
+    rowsByKey.forEach((row, key) => {
+      if (wanted.has(key)) return;
+      rowsByKey.delete(key);
+      row.classList.remove('enter');
+      row.classList.add('leave');
+      row.addEventListener('animationend', () => row.remove(), { once:true });
+    });
+    let cursor = list.firstElementChild;
+    items.forEach((item, index) => {
+      let row = rowsByKey.get(item.key);
+      if (!row) {
+        row = makeRow(item);
+        if (firstRender) { row.classList.add('enter'); row.style.animationDelay = `${index * 45}ms`; }
+        else row.classList.add('enter');
+        rowsByKey.set(item.key, row);
+      }
+      setCount(row, item.count);
+      while (cursor && cursor.classList.contains('leave')) cursor = cursor.nextElementSibling;
+      if (cursor !== row) list.insertBefore(row, cursor);
+      else cursor = cursor.nextElementSibling;
+    });
+    firstRender = false;
+  }
+
+  if (isPreview) {
+    fetch('/examples/champions-results.json')
+      .then(response => {
+        if (!response.ok) throw new Error(`Sample results request failed (${response.status})`);
+        return response.json();
+      })
+      .then(data => renderResults(data.championsResults))
+      .catch(error => {
+        list.textContent = 'Could not load sample results.';
+        console.error(error);
+      });
+  } else if (roomMatch) {
+    new EventSource(`/room/${roomMatch[1]}/events`).onmessage = event => renderResults(JSON.parse(event.data).championsResults);
+  }
+</script>
+</body>
+</html>
