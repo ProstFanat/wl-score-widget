@@ -109,12 +109,9 @@
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
-      document.getElementById('control-link').value = new URL(data.controlUrl, location.origin).href;
-      const links = document.getElementById('overlay-links');
-      links.replaceChildren();
-      for (const [theme, title] of themes) addLink(links, title, data.overlays[theme]);
-      result.classList.add('visible');
-      result.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      try { sessionStorage.setItem('new-room-password', password); } catch {}
+      location.href = data.controlUrl;
+      return;
     } catch (error) {
       message.textContent = error.message;
     } finally {

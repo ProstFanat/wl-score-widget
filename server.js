@@ -70,6 +70,12 @@ const scoreboards = {
 const pages = {
   '/': 'index.html',
   '/halloween': 'overlays/halloween.html',
+  '/chupapi': 'overlays/chupapi.html',
+  '/preview/chupapi': 'overlays/chupapi.html',
+  '/default-left': 'overlays/default-left.html',
+  '/halloween-left': 'overlays/halloween-left.html',
+  '/preview/default-left': 'overlays/default-left.html',
+  '/preview/halloween-left': 'overlays/halloween-left.html',
   '/halloween/control': 'controls/default.html',
   '/phoenix-overlay': 'overlays/phoenix-overlay.html',
   '/phoenix-upg': 'overlays/phoenix-upg.html',
@@ -95,9 +101,10 @@ const legacyBoardIds = {
 };
 const roomClients = new Map();
 const ROOM_THEMES = ['default', 'halloween'];
+const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left'];
 
-function roomOverlayLinks(viewId, suffix = '') {
-  return Object.fromEntries(ROOM_THEMES.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
+function roomOverlayLinks(viewId, suffix = '', themes = ROOM_THEMES) {
+  return Object.fromEntries(themes.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
 }
 
 function normalizeBoard(row) {
@@ -412,7 +419,7 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, {
       ...normalizeBoard(rows[0]),
       viewId: rows[0].view_id,
-      overlays: roomOverlayLinks(rows[0].view_id),
+      overlays: roomOverlayLinks(rows[0].view_id, '', ROOM_OVERLAY_THEMES),
       resultOverlays: roomOverlayLinks(rows[0].view_id, '/results'),
     });
   }
@@ -487,7 +494,7 @@ async function handleRequest(req, res) {
     return sendJson(res, 201, {
       name,
       controlUrl: `/manage/${controlToken}`,
-      overlays: roomOverlayLinks(viewId),
+      overlays: roomOverlayLinks(viewId, '', ROOM_OVERLAY_THEMES),
     });
   }
 
@@ -554,12 +561,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -625,7 +632,7 @@ async function handleRequest(req, res) {
     return sendJson(res, 200, {
       ...normalizeBoard(rows[0]),
       viewId: rows[0].view_id,
-      overlays: roomOverlayLinks(rows[0].view_id),
+      overlays: roomOverlayLinks(rows[0].view_id, '', ROOM_OVERLAY_THEMES),
       resultOverlays: roomOverlayLinks(rows[0].view_id, '/results'),
     });
   }
@@ -720,6 +727,10 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/phoenix.png')));
   }
 
+  if (req.method === 'GET' && url === '/assets/chupapi_logo.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/chupapi_logo.png')));
+  }
   if (req.method === 'GET' && url === '/assets/halloween-pumpkin.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Halloween pumpkin.png')));
