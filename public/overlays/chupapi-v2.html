@@ -1,0 +1,249 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chupapi V2 Score Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme:dark;
+    --green:#74f5a5;
+    --purple:#a566ff;
+    --w:min(760px,calc(100vw - 32px));
+  }
+  html, body { margin:0; background:transparent; color:#fff; font-family:"Russo One","Arial Black",Arial,sans-serif; font-weight:400; }
+  .wrap { display:inline-block; padding:16px; }
+  .board { position:relative; width:var(--w); aspect-ratio:2163 / 497; }
+  .layer, .logo, .logo-glow { position:absolute; display:block; pointer-events:none; user-select:none; }
+  .layer { inset:0; width:100%; height:100%; }
+
+  /* neon glow behind the frame: a pre-blurred copy whose opacity breathes */
+  .glow { filter:blur(calc(var(--w) * .008)) saturate(1.7) brightness(1.35); opacity:.25; animation:glow-breathe 4.6s ease-in-out infinite; }
+  .glow.two { opacity:0; animation:glow-breathe 4.6s ease-in-out 2.3s infinite; filter:blur(calc(var(--w) * .02)) saturate(2) brightness(1.5); }
+
+  /* effects clipped to the silhouette of the frame */
+  .fx {
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+    -webkit-mask:url("/assets/chupapi-v2/chupapi-base.png") center / 100% 100% no-repeat;
+    mask:url("/assets/chupapi-v2/chupapi-base.png") center / 100% 100% no-repeat;
+  }
+  .sweep {
+    position:absolute; top:-10%; bottom:-10%; left:0; width:16%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+    transform:translateX(-120%) skewX(-24deg);
+    animation:sweep 8s ease-in-out infinite;
+  }
+  .spark {
+    position:absolute; bottom:-4%; left:var(--x); width:var(--s); height:var(--s); border-radius:50%;
+    background:var(--c); box-shadow:0 0 calc(var(--s) * 2) var(--c); opacity:0;
+    animation:spark-rise var(--d) ease-in var(--delay) infinite;
+  }
+  .flash { position:absolute; top:0; bottom:0; width:50%; opacity:0; }
+  .flash.win { left:0; background:radial-gradient(ellipse at 50% 55%,rgba(116,245,165,.7),transparent 70%); }
+  .flash.loss { right:0; background:radial-gradient(ellipse at 50% 55%,rgba(165,102,255,.75),transparent 70%); }
+  .flash.on { animation:flash .9s ease-out; }
+
+  .progress-row { position:absolute; left:21.7%; width:56.6%; top:84.5%; height:7.2%; display:flex; align-items:center; justify-content:center; --gap:0px; --seg-h:10px; }
+  .progress-segment {
+    flex:none; height:var(--seg-h); margin:0 calc(var(--gap) / 2);
+    border-radius:999px; background:rgba(160,180,195,.17);
+  }
+  .progress-segment.win { background:linear-gradient(var(--green),var(--green)) left center / 100% 100% no-repeat, rgba(160,180,195,.17); }
+  .progress-segment.loss { background:linear-gradient(var(--purple),var(--purple)) left center / 100% 100% no-repeat, rgba(160,180,195,.17); }
+  .progress-segment.fresh { animation:seg-fill .6s ease-out both; }
+
+  .logo { left:39.5%; top:9.9%; width:21.7%; height:81.9%; animation:logo-float 5s ease-in-out infinite; }
+  .logo-glow { left:39.5%; top:9.9%; width:21.7%; height:81.9%; filter:blur(calc(var(--w) * .012)) saturate(1.8) brightness(1.4); opacity:0; animation:glow-breathe 3.4s ease-in-out infinite, logo-float 5s ease-in-out infinite, logo-spin-glow 30s linear infinite; }
+  .logo img { display:block; width:100%; height:100%; transform-style:preserve-3d; animation:logo-spin 30s linear infinite; }
+  .logo-glow { object-fit:contain; }
+
+  .side { position:absolute; top:54.5%; width:30%; height:44%; display:grid; place-items:center; transform:translate(-50%,-50%); }
+  .side > * { grid-area:1 / 1; }
+  .side.wins { left:23.1%; }
+  .side.loss { left:76.9%; }
+  .number { font-size:calc(var(--w) * .088); line-height:1; transition:opacity .18s ease, transform .18s ease; text-shadow:0 .03em .09em rgba(0,0,0,.55); }
+  .wins .number { color:#d8ffe6; }
+  .loss .number { color:#efdfff; }
+  .number.out { opacity:0; transform:scale(.6); }
+  .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
+  .word { font-size:calc(var(--w) * .062); letter-spacing:.06em; line-height:1; opacity:0; pointer-events:none; }
+  .word.win { color:var(--green); text-shadow:0 0 .35em rgba(116,245,165,.85),0 .03em .09em rgba(0,0,0,.6); }
+  .word.loss { color:var(--purple); text-shadow:0 0 .35em rgba(165,102,255,.9),0 .03em .09em rgba(0,0,0,.6); }
+  .word.show { animation:word-pop 1s cubic-bezier(.2,1.2,.3,1) both; }
+
+  @keyframes glow-breathe { 0%,100% { opacity:.12; } 50% { opacity:.62; } }
+  @keyframes sweep { 0% { transform:translateX(-120%) skewX(-24deg); opacity:0; } 6% { opacity:1; } 28% { opacity:1; } 34%,100% { transform:translateX(720%) skewX(-24deg); opacity:0; } }
+  @keyframes spark-rise { 0% { transform:translate(0,0) scale(.5); opacity:0; } 15% { opacity:.9; } 100% { transform:translate(var(--dx),-120%) scale(1); opacity:0; } }
+  @keyframes flash { 0% { opacity:0; } 18% { opacity:1; } 100% { opacity:0; } }
+  @keyframes logo-float { 0%,100% { transform:translateY(.5%) scale(1); } 50% { transform:translateY(-3%) scale(1.03); } }
+  @keyframes logo-spin {
+    0% { transform:rotateY(0); }
+    4% { transform:rotateY(360deg); }
+    100% { transform:rotateY(360deg); }
+  }
+  @keyframes logo-spin-glow {
+    0% { rotate:y 0deg; }
+    4% { rotate:y 360deg; }
+    100% { rotate:y 360deg; }
+  }
+  @keyframes seg-fill { from { background-size:0% 100%, auto; } to { background-size:100% 100%, auto; } }
+  @keyframes word-pop {
+    0% { opacity:0; transform:scale(.4) translateY(10px); }
+    25% { opacity:1; transform:scale(1.15) translateY(0); }
+    70% { opacity:1; transform:scale(1); }
+    100% { opacity:0; transform:scale(1.25); }
+  }
+  @keyframes score-pop {
+    0% { transform:translateY(-16px) scale(1.2); opacity:0; }
+    100% { transform:translateY(0) scale(1); opacity:1; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="board" id="board" aria-label="Chupapi wins and losses">
+    <img class="layer glow" src="/assets/chupapi-v2/chupapi-base.png" alt="" aria-hidden="true">
+    <img class="layer glow two" src="/assets/chupapi-v2/chupapi-base.png" alt="" aria-hidden="true">
+    <img class="layer" src="/assets/chupapi-v2/chupapi-base.png" alt="">
+    <div class="fx" id="fx" aria-hidden="true"><span class="sweep"></span><span class="flash win" id="flash-w"></span><span class="flash loss" id="flash-l"></span></div>
+    <img class="logo-glow" src="/assets/chupapi-v2/chupapi-logo-v2.png" alt="" aria-hidden="true">
+    <div class="logo"><img src="/assets/chupapi-v2/chupapi-logo-v2.png" alt="Chupapi"></div>
+    <img class="layer" src="/assets/chupapi-v2/chupapi-progress-line.png" alt="">
+    <div class="progress-row" id="progress" role="group" aria-label="Match results"></div>
+    <div class="side wins"><span class="number" id="w">0</span><span class="word win" id="w-word">WIN</span></div>
+    <div class="side loss"><span class="number" id="l">0</span><span class="word loss" id="l-word">LOSS</span></div>
+  </section>
+</div>
+<script>
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const progress = document.getElementById('progress');
+  const progressSegments = 15;
+
+  for (let i = 0; i < progressSegments; i++) {
+    const segment = document.createElement('span');
+    segment.className = 'progress-segment';
+    progress.appendChild(segment);
+  }
+
+  // Whole-pixel, equal-width pills: fractional widths render some segments 1px wider than others.
+  function layoutProgress() {
+    const available = progress.clientWidth;
+    let segment = Math.floor(available / (progressSegments + 14 * 0.26));
+    if (segment < 2) return;
+    const gap = Math.floor((available - progressSegments * segment) / 14);
+    progress.style.setProperty('--gap', `${gap}px`);
+    progress.style.setProperty('--seg-h', `${Math.max(4, Math.round(segment * 0.3))}px`);
+    [...progress.children].forEach(s => { s.style.width = `${segment}px`; });
+    progress.style.marginLeft = `-${gap / 2}px`;
+    progress.style.marginRight = `-${gap / 2}px`;
+  }
+  new ResizeObserver(layoutProgress).observe(document.getElementById('board'));
+  layoutProgress();
+
+  // drifting sparks, kept inside the frame silhouette by the mask on .fx
+  const fx = document.getElementById('fx');
+  for (let i = 0; i < 16; i++) {
+    const spark = document.createElement('span');
+    const left = i % 2 === 0;
+    const size = 2 + Math.random() * 3;
+    const duration = 4 + Math.random() * 4;
+    spark.className = 'spark';
+    spark.style.setProperty('--x', `${left ? 6 + Math.random() * 38 : 56 + Math.random() * 38}%`);
+    spark.style.setProperty('--s', `${size}px`);
+    spark.style.setProperty('--c', left ? '#7dffae' : '#b98aff');
+    spark.style.setProperty('--d', `${duration}s`);
+    spark.style.setProperty('--delay', `${-Math.random() * duration}s`);
+    spark.style.setProperty('--dx', `${-14 + Math.random() * 28}px`);
+    fx.appendChild(spark);
+  }
+
+  let first = true;
+  let shownHistory = [];
+
+  const WORD_MS = 1000;
+  const timers = {};
+
+  function setNumber(number, value) {
+    number.textContent = value;
+    number.classList.remove('out', 'tick');
+    void number.offsetWidth;
+    number.classList.add('tick');
+  }
+
+  function flash(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('on');
+    void el.offsetWidth;
+    el.classList.add('on');
+  }
+
+  function updateScore(id, value) {
+    const number = document.getElementById(id);
+    const word = document.getElementById(id + '-word');
+    const previous = Number(number.dataset.value ?? number.textContent);
+    number.dataset.value = String(value);
+    clearTimeout(timers[id]);
+    word.classList.remove('show');
+    if (first || value <= previous) {
+      number.classList.remove('out', 'tick');
+      number.textContent = value;
+      return;
+    }
+    flash(id === 'w' ? 'flash-w' : 'flash-l');
+    number.classList.add('out');
+    void word.offsetWidth;
+    word.classList.add('show');
+    timers[id] = setTimeout(() => {
+      word.classList.remove('show');
+      setNumber(number, number.dataset.value);
+    }, WORD_MS);
+  }
+
+  function render(state) {
+    updateScore('w', state.wins);
+    updateScore('l', state.losses);
+    const total = state.wins + state.losses;
+    const history = Array.isArray(state.history) && state.history.length === total
+      ? state.history
+      : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
+    [...progress.children].forEach((segment, index) => {
+      const result = history[index];
+      const isNew = !first && result && !shownHistory[index];
+      if (!result) segment.classList.remove('fresh');
+      if (isNew) {
+        segment.classList.remove('fresh');
+        void segment.offsetWidth;
+        segment.classList.add('fresh');
+      }
+      segment.classList.toggle('win', result === 'W');
+      segment.classList.toggle('loss', result === 'L');
+      segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
+    });
+    shownHistory = [...history];
+    first = false;
+  }
+
+  const roomMatch = location.pathname.match(/^\/room\/([a-f0-9]{32})\//);
+  const isPreview = new URLSearchParams(location.search).get('preview') === '1' || location.pathname.startsWith('/preview/');
+
+  if (isPreview) {
+    if (window.self === window.top) {
+      const homeLink = document.createElement('a');
+      homeLink.href = '/';
+      homeLink.textContent = '← Scoreboard Studio';
+      homeLink.style.cssText = 'position:fixed;top:10px;left:12px;color:#fff;font:400 11px "Russo One",Arial,sans-serif;text-decoration:none';
+      document.body.appendChild(homeLink);
+    }
+    render({ wins:14, losses:1, history:[...'WWWWWWWWLWWWWWW'], max:15 });
+  } else {
+    new EventSource(roomMatch ? `/room/${roomMatch[1]}/events` : BASE + '/default/events').onmessage = event => render(JSON.parse(event.data));
+  }
+</script>
+</body>
+</html>

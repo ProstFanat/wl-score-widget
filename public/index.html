@@ -13,9 +13,17 @@
   header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:30px; }
   .brand { display:flex; align-items:center; gap:11px; color:#fff; font-size:12px; font-weight:850; letter-spacing:2.5px; }
   .brand-mark { width:10px; height:10px; transform:rotate(45deg); border:1px solid var(--gold); background:rgba(232,199,126,.24); box-shadow:0 0 12px rgba(232,199,126,.5); }
-  .header-links { display:flex; align-items:center; gap:18px; }
-  .top-link { color:#9beee7; font-size:12px; font-weight:750; text-decoration:none; }
-  .top-link:hover { color:white; }
+  .header-links { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; }
+  .top-link { display:inline-flex; align-items:center; min-height:38px; padding:0 15px; border:1px solid rgba(120,230,223,.55); border-radius:999px; background:rgba(120,230,223,.12); color:#fff; font-size:14px; font-weight:750; text-decoration:none; transition:background .15s,border-color .15s; }
+  .top-link:hover { border-color:var(--cyan); background:rgba(120,230,223,.26); }
+  .top-link.primary { border-color:transparent; background:linear-gradient(135deg,#c9fff4,#78e6df); color:#092022; }
+  .top-link.primary:hover { filter:brightness(1.08); background:linear-gradient(135deg,#c9fff4,#78e6df); }
+  .cta { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .button.secondary { border:1px solid rgba(120,230,223,.6); background:rgba(120,230,223,.1); color:#e8fffb; }
+  .button.secondary:hover { background:rgba(120,230,223,.22); filter:none; }
+  .custom { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px 14px; margin-top:18px; padding:16px 20px; border:1px dashed rgba(232,199,126,.5); border-radius:14px; background:rgba(232,199,126,.07); color:#f3e7c4; font-size:15px; font-weight:650; text-align:center; }
+  .custom a { color:var(--gold); font-weight:850; text-decoration:underline; text-underline-offset:3px; }
+  .custom a:hover { color:#fff; }
   .hero { display:grid; grid-template-columns:1fr auto; align-items:center; gap:22px; max-width:850px; margin-bottom:34px; }
   .hero-copy { max-width:620px; }
   .eyebrow { color:var(--cyan); font-size:10px; font-weight:850; letter-spacing:2.5px; }
@@ -30,6 +38,7 @@
   .widget:hover { border-color:var(--accent); box-shadow:0 9px 25px var(--accent-glow),inset 0 1px rgba(255,255,255,.06); transform:translateY(-2px); }
   .widget { transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
   .widget.halloween { --accent:#ff8733; --accent-glow:rgba(255,135,51,.14); border-color:rgba(255,135,51,.32); }
+  .widget.mancity { --accent:#6cc3ff; --accent-glow:rgba(108,195,255,.14); border-color:rgba(108,195,255,.32); }
   .widget.default { --accent:var(--gold); --accent-glow:rgba(232,199,126,.13); border-color:rgba(232,199,126,.32); }
   .icon { display:grid; width:42px; height:42px; place-items:center; margin-bottom:14px; border:1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-radius:12px; background:color-mix(in srgb,var(--accent) 10%,transparent); color:var(--accent); font-size:21px; }
   .widget h3 { margin:0 0 6px; color:#f7f7f2; font-size:16px; }
@@ -58,6 +67,8 @@
     .widget { min-height:178px; }
     .personal { grid-template-columns:1fr; }
     .button { justify-self:start; }
+    header { align-items:flex-start; flex-direction:column; }
+    .header-links { justify-content:flex-start; }
     .section-head { align-items:start; flex-direction:column; gap:5px; }
   }
 </style>
@@ -67,9 +78,9 @@
   <header>
     <div class="brand"><span class="brand-mark"></span>SCOREBOARD STUDIO</div>
     <nav class="header-links" aria-label="Scoreboard navigation">
-      <a class="top-link" href="/camera-frames">Camera frames&nbsp; ↗</a>
-      <a class="top-link" href="/find-room">Find existing room&nbsp; ↗</a>
-      <a class="top-link" href="/new">Create your scoreboard&nbsp; ↗</a>
+      <a class="top-link" href="/camera-frames">Camera frames</a>
+      <a class="top-link" href="/find-room">Find existing room</a>
+      <a class="top-link primary" href="/new">Create your scoreboard</a>
     </nav>
   </header>
   <section class="hero">
@@ -78,7 +89,10 @@
       <h1>Your matchday.<br>Your scoreboard.</h1>
       <p class="intro">Create a scoreboard that’s yours, set a private password, and choose the look that fits your stream.</p>
     </div>
-    <a class="button" href="/new">CREATE PERSONAL SCOREBOARD</a>
+    <div class="cta">
+      <a class="button" href="/new">CREATE PERSONAL SCOREBOARD</a>
+      <a class="button secondary" href="/find-room">OPEN EXISTING ROOM</a>
+    </div>
   </section>
   <div class="section-head">
     <h2>Preview the styles</h2>
@@ -97,6 +111,12 @@
       <p>Premium broadcast-inspired styling with clear, ordered match results.</p>
       <button class="preview" type="button" data-preview="/preview/default" data-title="Default">PREVIEW DEFAULT</button>
     </article>
+    <article class="widget mancity">
+      <div class="icon" aria-hidden="true">⚓</div>
+      <h3>Man City</h3>
+      <p>Animated sea and a sailing ship behind the sky-blue badge, with clear match results.</p>
+      <button class="preview" type="button" data-preview="/preview/mancity" data-title="Man City">PREVIEW MAN CITY</button>
+    </article>
   </section>
   <a class="sample-link" href="/example/results">View a combined current-score and vertical-results example ↗</a>
   <section class="preview-panel" id="preview-panel" aria-label="Scoreboard design preview" hidden>
@@ -111,8 +131,15 @@
       <h2>Your own scoreboard starts here</h2>
       <p>Set a password, keep your score separate, and use its private controls with any of these overlay styles.</p>
     </div>
-    <a class="button" href="/new">CREATE PERSONAL SCOREBOARD</a>
+    <div class="cta">
+      <a class="button" href="/new">CREATE PERSONAL SCOREBOARD</a>
+      <a class="button secondary" href="/find-room">OPEN EXISTING ROOM</a>
+    </div>
   </section>
+  <div class="custom">
+    <span>Want your own personal design? Message me</span>
+    <a href="https://t.me/Ad_d_drian" target="_blank" rel="noopener">@Ad_d_drian on Telegram ↗</a>
+  </div>
   <p class="note">For OBS, add the overlay URL as a Browser Source. Keep your control link private; overlay links are safe to show on stream.</p>
 </main>
 <script>

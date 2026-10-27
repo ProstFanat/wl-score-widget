@@ -70,8 +70,12 @@ const scoreboards = {
 const pages = {
   '/': 'index.html',
   '/halloween': 'overlays/halloween.html',
-  '/chupapi': 'overlays/chupapi.html',
-  '/preview/chupapi': 'overlays/chupapi.html',
+  '/chupapi-v1': 'overlays/chupapi-v1.html',
+  '/mancity': 'overlays/mancity.html',
+  '/chupapi-v2': 'overlays/chupapi-v2.html',
+  '/preview/chupapi-v2': 'overlays/chupapi-v2.html',
+  '/preview/mancity': 'overlays/mancity.html',
+  '/preview/chupapi-v1': 'overlays/chupapi-v1.html',
   '/default-left': 'overlays/default-left.html',
   '/halloween-left': 'overlays/halloween-left.html',
   '/preview/default-left': 'overlays/default-left.html',
@@ -101,7 +105,7 @@ const legacyBoardIds = {
 };
 const roomClients = new Map();
 const ROOM_THEMES = ['default', 'halloween'];
-const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left'];
+const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity'];
 
 function roomOverlayLinks(viewId, suffix = '', themes = ROOM_THEMES) {
   return Object.fromEntries(themes.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
@@ -561,12 +565,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -725,6 +729,22 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/phoenix.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/phoenix.png')));
+  }
+
+  const chupapiV2Asset = url.match(/^\/assets\/chupapi-v2\/(chupapi-base|chupapi-base-with-logo|chupapi-logo-v2|chupapi-progress-line)\.png$/);
+  if (req.method === 'GET' && chupapiV2Asset) {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `assets/chupapi-v2/${chupapiV2Asset[1]}.png`)));
+  }
+
+  if (req.method === 'GET' && url === '/assets/mancity_logo.webp') {
+    res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/mancity_logo.webp')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/mancity_ship.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/mancity_ship.png')));
   }
 
   if (req.method === 'GET' && url === '/assets/chupapi_logo.png') {
