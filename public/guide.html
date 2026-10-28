@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071019">
+<title>Installing / usage guide · Scoreboard Studio</title>
+<style>
+  :root { color-scheme:dark; --gold:#e8c77e; --cyan:#78e6df; }
+  * { box-sizing:border-box; }
+  body { min-height:100vh; margin:0; padding:34px 20px 48px; background:radial-gradient(ellipse at 50% -20%,#1a3540 0,#0b1720 48%,#071019 100%); color:#f7f7f2; font-family:"Segoe UI",Arial,sans-serif; }
+  .shell { width:min(100%,780px); margin:0 auto; }
+  header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; margin-bottom:30px; }
+  .pill { display:inline-flex; align-items:center; min-height:38px; padding:0 15px; border:1px solid rgba(120,230,223,.55); border-radius:999px; background:rgba(120,230,223,.12); color:#fff; font:750 14px "Segoe UI",Arial,sans-serif; text-decoration:none; cursor:pointer; }
+  .pill:hover { border-color:var(--cyan); background:rgba(120,230,223,.26); }
+  .switch { display:flex; padding:3px; border:1px solid rgba(120,230,223,.45); border-radius:999px; background:rgba(8,19,28,.7); }
+  .switch button { min-height:32px; padding:0 16px; border:0; border-radius:999px; background:transparent; color:#cfe6e3; font:750 13px "Segoe UI",Arial,sans-serif; cursor:pointer; }
+  .switch button[aria-pressed="true"] { background:linear-gradient(135deg,#c9fff4,#78e6df); color:#092022; }
+  h1 { margin:0 0 22px; color:#fff0c4; font-size:clamp(28px,5vw,42px); line-height:1.1; letter-spacing:-1.2px; }
+  .step, .extra { margin-bottom:14px; padding:20px 22px; border:1px solid rgba(120,230,223,.3); border-radius:14px; background:linear-gradient(145deg,rgba(17,37,47,.84),rgba(8,19,28,.78)); }
+  .extra { border-color:rgba(232,199,126,.4); }
+  h2 { margin:0 0 10px; color:#e8fffb; font-size:18px; }
+  .extra h2 { color:var(--gold); }
+  p, li { color:#b9c7cb; font-size:15px; line-height:1.65; }
+  p { margin:0 0 8px; }
+  ol { margin:6px 0 0; padding-left:22px; }
+  li { margin-bottom:4px; }
+  .warn { padding:10px 14px; border-left:3px solid var(--gold); border-radius:6px; background:rgba(232,199,126,.1); color:#f3e7c4; }
+  a.inline { color:var(--cyan); font-weight:750; text-decoration:underline; text-underline-offset:3px; }
+  a.inline:hover { color:#fff; }
+  code { padding:2px 8px; border-radius:6px; background:rgba(0,0,0,.35); color:var(--gold); font-size:14px; }
+  .custom { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px 14px; margin-top:22px; padding:16px 20px; border:1px dashed rgba(232,199,126,.5); border-radius:14px; background:rgba(232,199,126,.07); color:#f3e7c4; font-size:15px; font-weight:650; text-align:center; }
+  .custom a { color:var(--gold); font-weight:850; text-decoration:underline; text-underline-offset:3px; }
+  .custom a:hover { color:#fff; }
+  [lang]:not(html)[hidden] { display:none; }
+</style>
+</head>
+<body>
+<main class="shell">
+  <header>
+    <a class="pill" href="/"><span data-t="en">← Back to home</span><span data-t="uk" hidden>← На головну</span></a>
+    <div class="switch" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="uk" aria-pressed="false">Українська</button>
+    </div>
+  </header>
+
+  <div lang="en" id="en">
+    <h1>Getting Started</h1>
+    <section class="step">
+      <h2>1. Create Your Personal Room</h2>
+      <p>On the main page, click <a class="inline" href="/new">Create Personal Scoreboard</a>.</p>
+      <p>After the room is created, you should be automatically redirected to it.</p>
+      <p class="warn">⚠️ Important: There is no need to create a new room every time. One room per user is more than enough and helps save space in the database.</p>
+    </section>
+    <section class="step">
+      <h2>2. If You Were Not Redirected Automatically</h2>
+      <p>There are two buttons on the main page that allow you to access your existing room:</p>
+      <ol>
+        <li><a class="inline" href="/find-room">Open Existing Room</a></li>
+        <li><a class="inline" href="/find-room">Find Existing Room</a></li>
+      </ol>
+      <p>Use either option to open your previously created room.</p>
+    </section>
+    <section class="step">
+      <h2>3. Widget Management</h2>
+      <p>A separate video guide is provided that explains all widget controls and available settings.</p>
+    </section>
+    <section class="step">
+      <h2>4. Adding Widgets to OBS</h2>
+      <p>To add a widget to OBS:</p>
+      <ol>
+        <li>Open the desired widget page in your browser.</li>
+        <li>Copy the URL from the browser's address bar.</li>
+        <li>In OBS, create a new Browser Source.</li>
+        <li>Paste the copied URL into the source settings.</li>
+      </ol>
+    </section>
+    <section class="step">
+      <h2>5. Resizing Widgets</h2>
+      <p>The width of the Browser Source in OBS can be adjusted freely.</p>
+      <p>As the width changes, the widget layout will automatically adapt to fit the available space and maintain a clean appearance.</p>
+    </section>
+    <section class="extra">
+      <h2>Using Personal Widgets</h2>
+      <p>To use personal widgets, you need to manually modify the URL of any free widget.</p>
+      <p>Simply replace the ending <code>.../default</code> with your personal room identifier, which will be created and sent to you individually.</p>
+      <p>That's it. Once updated, the widget will display data from your personal room instead of the default one.</p>
+    </section>
+    <div class="custom">
+      <span>Want your own personal design? Message me</span>
+      <a href="https://t.me/Ad_d_drian" target="_blank" rel="noopener">@Ad_d_drian on Telegram ↗</a>
+    </div>
+  </div>
+
+  <div lang="uk" id="uk" hidden>
+    <h1>Як почати користуватися сервісом</h1>
+    <section class="step">
+      <h2>1. Створіть власну кімнату</h2>
+      <p>На головній сторінці натисніть <a class="inline" href="/new">Create Personal Scoreboard</a>.</p>
+      <p>Після створення вас автоматично перенаправить у щойно створену кімнату.</p>
+      <p class="warn">⚠️ Важливо: Не потрібно щоразу створювати нову кімнату. Однієї кімнати на користувача більш ніж достатньо. Це також допомагає економити місце в базі даних.</p>
+    </section>
+    <section class="step">
+      <h2>2. Якщо автоматичне перенаправлення не спрацювало</h2>
+      <p>На головній сторінці доступні дві кнопки для входу у вашу кімнату:</p>
+      <ol>
+        <li><a class="inline" href="/find-room">Open Existing Room</a></li>
+        <li><a class="inline" href="/find-room">Find Existing Room</a></li>
+      </ol>
+      <p>Використайте будь-яку з них, щоб відкрити вже створену кімнату.</p>
+    </section>
+    <section class="step">
+      <h2>3. Керування віджетами</h2>
+      <p>Окремо додано відео-інструкцію, в якій показано всі основні можливості та налаштування віджетів.</p>
+    </section>
+    <section class="step">
+      <h2>4. Додавання віджетів в OBS</h2>
+      <p>Щоб додати віджет в OBS:</p>
+      <ol>
+        <li>Відкрийте сторінку потрібного віджета в браузері.</li>
+        <li>Скопіюйте URL-адресу зі свого браузера.</li>
+        <li>В OBS створіть нове джерело типу Browser.</li>
+        <li>Вставте скопійоване посилання в налаштування джерела.</li>
+      </ol>
+    </section>
+    <section class="step">
+      <h2>5. Налаштування розміру</h2>
+      <p>Ширину браузерного джерела в OBS можна вільно змінювати.</p>
+      <p>При зміні ширини дизайн віджетів автоматично адаптується під новий розмір для більш коректного відображення.</p>
+    </section>
+    <section class="extra">
+      <h2>Використання персональних віджетів</h2>
+      <p>Для використання персональних віджетів необхідно вручну змінити посилання будь-якого безкоштовного віджета.</p>
+      <p>Все дуже просто: замість частини URL <code>.../default</code> необхідно підставити свій персональний ідентифікатор кімнати, який буде створений та надісланий вам особисто.</p>
+    </section>
+    <div class="custom">
+      <span>Хочете власний персональний дизайн? Напишіть мені</span>
+      <a href="https://t.me/Ad_d_drian" target="_blank" rel="noopener">@Ad_d_drian у Telegram ↗</a>
+    </div>
+  </div>
+</main>
+<script>
+  function setLang(lang) {
+    document.documentElement.lang = lang;
+    for (const el of document.querySelectorAll('[data-t]')) el.hidden = el.dataset.t !== lang;
+    for (const id of ['en', 'uk']) document.getElementById(id).hidden = id !== lang;
+    for (const b of document.querySelectorAll('[data-lang]')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+    try { localStorage.setItem('guideLang', lang); } catch {}
+  }
+  for (const b of document.querySelectorAll('[data-lang]')) b.addEventListener('click', () => setLang(b.dataset.lang));
+  let saved = 'en';
+  try { saved = localStorage.getItem('guideLang') || ((navigator.language || '').startsWith('uk') ? 'uk' : 'en'); } catch {}
+  setLang(saved === 'uk' ? 'uk' : 'en');
+</script>
+</body>
+</html>
