@@ -38,6 +38,11 @@
   label { display:block; margin-bottom:6px; color:#9aadb3; font-size:11px; font-weight:650; }
   input { width:100%; padding:10px; border:1px solid #354851; border-radius:8px; background:#08131b; color:#fff; font:700 19px "Segoe UI",Arial,sans-serif; text-align:center; }
   .set { margin-top:11px; color:#102029; background:linear-gradient(135deg,#fff0c4,#d8ad55); }
+  .code-row { display:flex; gap:8px; align-items:stretch; }
+  .code-row input { flex:1 1 auto; min-width:0; font-size:13px; font-weight:600; text-align:left; }
+  .code-row button { flex:none; width:auto; min-height:0; padding:0 14px; white-space:nowrap; color:#07131d; background:var(--cyan); font-size:12px; }
+  .code-message { min-height:16px; margin:8px 0 0; color:#ff9e91; font-size:11px; line-height:1.4; word-break:break-all; }
+  .code-message.ok { color:#9beee7; }
   .links { margin-top:18px; padding-top:15px; border-top:1px solid rgba(255,255,255,.09); }
   .overlay-row { display:flex; align-items:center; gap:8px; margin-top:9px; }
   .overlay-row span { flex:1 1 auto; min-width:120px; color:#c3cfd0; font-size:12px; font-weight:650; }
@@ -100,6 +105,14 @@
       <div><label for="sl">Losses</label><input id="sl" type="number" min="0" max="999" inputmode="numeric"></div>
     </div>
     <button class="set" onclick="setValues()">Update record</button>
+  </section>
+  <section class="section">
+    <h2 class="section-title">Get personal widget link</h2>
+    <form class="code-row" id="code-form">
+      <input id="personal-code" type="text" maxlength="40" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste here code provided to you" aria-label="Personal code">
+      <button type="submit">Copy personal widget link</button>
+    </form>
+    <p class="code-message" id="code-message" role="status" aria-live="polite"></p>
   </section>
   <nav class="links" id="links"></nav>
   </div>
@@ -220,6 +233,22 @@
       row.querySelector('a').href = url.href;
     }
   }
+  let roomViewId = '';
+  document.getElementById('code-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const message = document.getElementById('code-message');
+    const code = document.getElementById('personal-code').value.trim().toLowerCase();
+    message.className = 'code-message';
+    if (!/^[a-z0-9-]{1,40}$/.test(code)) {
+      message.textContent = 'Enter the code you were given (letters, numbers and dashes only).';
+      return;
+    }
+    const link = new URL(`/room/${roomViewId}/${code}`, location.origin).href;
+    let copied = true;
+    try { await navigator.clipboard.writeText(link); } catch { copied = false; }
+    message.className = 'code-message ok';
+    message.textContent = `${copied ? 'Copied: ' : 'Copy this link: '}${link}`;
+  });
   function setValues() {
     const query = new URLSearchParams();
     const wins = document.getElementById('sw').value;
@@ -286,6 +315,7 @@
       document.title = `${data.name} · Score Control`;
       document.getElementById('name').textContent = data.name;
       update(data);
+      roomViewId = data.viewId;
       const links = document.getElementById('links');
       for (const [theme, label] of [['default', 'Default overlay'], ['halloween', 'Halloween overlay'], ['default-left', 'Default overlay (left)'], ['halloween-left', 'Halloween overlay (left)'], ['mancity', 'Man City overlay']]) {
         addOverlayRow(links, label, data.overlays[theme]);

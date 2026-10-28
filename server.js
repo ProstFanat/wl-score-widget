@@ -72,6 +72,8 @@ const pages = {
   '/halloween': 'overlays/halloween.html',
   '/chupapi-v1': 'overlays/chupapi-v1.html',
   '/mancity': 'overlays/mancity.html',
+  '/hetra-zidana': 'overlays/hetra-zidana.html',
+  '/preview/hetra-zidana': 'overlays/hetra-zidana.html',
   '/chupapi-v2': 'overlays/chupapi-v2.html',
   '/preview/chupapi-v2': 'overlays/chupapi-v2.html',
   '/preview/mancity': 'overlays/mancity.html',
@@ -736,6 +738,17 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && chupapiV2Asset) {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `assets/chupapi-v2/${chupapiV2Asset[1]}.png`)));
+  }
+
+  if (req.method === 'GET' && url === '/assets/hetra/zidane-cut.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/hetra/zidane-cut.png')));
+  }
+
+  const hetraAsset = url.match(/^\/assets\/hetra\/(sock-white|sock-gold|sock-blue)\.png$/);
+  if (req.method === 'GET' && hetraAsset) {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `assets/hetra/${hetraAsset[1]}.png`)));
   }
 
   if (req.method === 'GET' && url === '/assets/mancity_logo.webp') {
