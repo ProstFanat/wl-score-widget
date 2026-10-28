@@ -36,8 +36,18 @@
     z-index:-2;
     inset:0;
     overflow:hidden;
-    background:linear-gradient(180deg,#0e2a55 0%,#0a1c3d 55%,#07122a 100%);
+    background:linear-gradient(180deg,#1b4f94 0%,#12376e 45%,#0a2147 100%);
   }
+  .stars { position:absolute; inset:0 0 30px 0; pointer-events:none; }
+  .star {
+    position:absolute;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 0 4px 1px rgba(190,225,255,.7);
+    opacity:.2;
+    animation:twinkle var(--d,3s) ease-in-out var(--delay,0s) infinite;
+  }
+  .star.big { box-shadow:0 0 7px 2px rgba(190,225,255,.8); }
   .bg::before {
     position:absolute;
     inset:0;
@@ -168,6 +178,7 @@
     70% { opacity:1; transform:scale(1); }
     100% { opacity:0; transform:scale(1.25); }
   }
+  @keyframes twinkle { 0%,100% { opacity:.15; transform:scale(.7); } 50% { opacity:1; transform:scale(1.25); } }
   @keyframes wave-flow { to { transform:translateX(-160px); } }
   @keyframes ship-sail { from { transform:translateX(-110px); } to { transform:translateX(calc(var(--track,640px) + 30px)); } }
   @keyframes foam { from { background-position:-100% 0; } to { background-position:200% 0; } }
@@ -193,7 +204,7 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="Man City wins and losses">
-    <div class="bg" aria-hidden="true"><div class="wave back"></div><div class="ship-track"><div class="ship" id="ship"><img src="/assets/mancity_ship.png" alt=""></div></div><div class="wave mid"></div><div class="wave front"></div><div class="foam"></div></div>
+    <div class="bg" aria-hidden="true"><div class="stars" id="stars"></div><div class="wave back"></div><div class="ship-track"><div class="ship" id="ship"><img src="/assets/mancity_ship.png" alt=""></div></div><div class="wave mid"></div><div class="wave front"></div><div class="foam"></div></div>
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
     <div class="scoreline">
@@ -299,6 +310,17 @@
   }
 
   const roomMatch = location.pathname.match(/^\/room\/([a-f0-9]{32})\//);
+  (() => {
+    const box = document.getElementById('stars');
+    if (!box) return;
+    for (let i = 0; i < 38; i++) {
+      const el = document.createElement('i');
+      const size = Math.random() < .2 ? 3 : (Math.random() < .5 ? 2 : 1.5);
+      el.className = 'star' + (size === 3 ? ' big' : '');
+      el.style.cssText = `left:${(Math.random()*100).toFixed(1)}%;top:${(Math.random()*90).toFixed(1)}%;width:${size}px;height:${size}px;--d:${(2+Math.random()*3).toFixed(1)}s;--delay:-${(Math.random()*5).toFixed(1)}s`;
+      box.appendChild(el);
+    }
+  })();
   const isPreview = new URLSearchParams(location.search).get('preview') === '1' || location.pathname.startsWith('/preview/');
 
   if (isPreview) {
