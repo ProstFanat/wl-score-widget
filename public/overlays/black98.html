@@ -18,7 +18,9 @@
     --loss:#8d8d8d;
     --ink:#050505;
     --overlay-width:640px;
-    --logo-w:180px;
+    --logo-w:230px;
+    /* The lettering sits in the upper third of the logo (drips hang below), so push the image down to centre the text. */
+    --logo-drop:calc(var(--logo-w) * .115);
     --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 -.18'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
   }
   html, body { margin:0; background:transparent; color:#fff; font-family:"Cruyff Sans","Arial Narrow",Arial,sans-serif; }
@@ -90,6 +92,7 @@
   .edge.win { left:9px; background:var(--win); box-shadow:0 0 10px rgba(255,255,255,.7); animation:edge-flicker 6s linear infinite; }
   .edge.loss { right:9px; background:repeating-linear-gradient(180deg,var(--loss) 0 5px,transparent 5px 9px); }
   .scoreline {
+    position:relative;
     display:grid;
     grid-template-columns:1fr var(--logo-w) 1fr;
     align-items:center;
@@ -145,13 +148,14 @@
     align-items:center;
     justify-content:center;
     pointer-events:none;
-    transform:translate(-50%,-50%);
+    transform:translate(-50%,calc(-50% + var(--logo-drop)));
     animation:logo-float 5s ease-in-out infinite;
   }
   .logo {
     display:block;
     width:100%;
     height:auto;
+    aspect-ratio:637 / 379;
     filter:drop-shadow(0 6px 6px rgba(0,0,0,.85)) drop-shadow(0 0 10px rgba(255,255,255,.22));
     animation:logo-glitch 12s steps(1) infinite;
   }
@@ -217,8 +221,8 @@
   @keyframes glow-breathe { 0%,100% { opacity:.3; } 50% { opacity:.7; } }
   @keyframes edge-flicker { 0%,100% { opacity:1; } 91% { opacity:1; } 92% { opacity:.35; } 93% { opacity:1; } 95% { opacity:.5; } 96% { opacity:1; } }
   @keyframes logo-float {
-    0%,100% { transform:translate(-50%,-50%) rotate(-2deg); }
-    50% { transform:translate(-50%,calc(-50% - 4px)) rotate(2deg); }
+    0%,100% { transform:translate(-50%,calc(-50% + var(--logo-drop))) rotate(-2deg); }
+    50% { transform:translate(-50%,calc(-50% + var(--logo-drop) - 4px)) rotate(2deg); }
   }
   /* A short digital stutter every few seconds, like a fresh tag flickering. */
   @keyframes logo-glitch {
@@ -245,8 +249,8 @@
   @media (max-width:500px) {
     .wrap { padding:32px 16px; }
     .card { padding:6px 12px 10px; }
-    :root { --logo-w:110px; }
-    .number { font-size:50px; }
+    :root { --logo-w:140px; }
+    .number { font-size:46px; }
     .scoreline { min-height:66px; }
     .progress-row { gap:2px; --seg-h:4px; margin:8px 0 0; }
   }
@@ -266,7 +270,7 @@
     <div class="scoreline">
       <div class="side wins"><span class="number" id="w">0</span><span class="word win" id="w-word">WIN</span><span class="splat"></span></div>
       <div class="center">
-        <img class="logo" src="/assets/black98/logo.png" alt="Black98">
+        <img class="logo" src="/assets/black98/logo.png" width="637" height="379" alt="Black98">
       </div>
       <div class="side loss"><span class="number" id="l">0</span><span class="word loss" id="l-word">LOSS</span><span class="splat"></span></div>
     </div>
