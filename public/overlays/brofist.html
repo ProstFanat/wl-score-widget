@@ -73,8 +73,8 @@
     filter:drop-shadow(0 4px 6px rgba(0,0,0,.6));
   }
   .fist img { display:block; width:100%; height:100%; transform:rotate(var(--tilt,48deg)); }
-  .fist.left { left:calc(var(--fist-w) * -1.2); animation:fist-left 30s linear 2s infinite; }
-  .fist.right { right:calc(var(--fist-w) * -1.2); animation:fist-right 30s linear 2s infinite; }
+  .fist.left { left:calc(50% - var(--fist-w) - 9px); animation:fist-left 30s linear var(--loop-delay,-25s) infinite; }
+  .fist.right { right:calc(50% - var(--fist-w) - 9px); animation:fist-right 30s linear var(--loop-delay,-25s) infinite; }
   .fist.right img { transform:scaleX(-1) rotate(var(--tilt,48deg)); }
   .impact {
     position:absolute;
@@ -86,9 +86,9 @@
     border:3px solid rgba(255,213,0,.75);
     border-radius:50%;
     opacity:0;
-    animation:impact 30s ease-out 2s infinite;
+    animation:impact 30s ease-out var(--loop-delay,-25s) infinite;
   }
-  .impact.two { animation-delay:2.15s; border-color:rgba(47,139,255,.8); }
+  .impact.two { animation-delay:calc(var(--loop-delay,-25s) + .15s); border-color:rgba(47,139,255,.8); }
   .flash {
     position:absolute;
     top:50%;
@@ -99,7 +99,7 @@
     border-radius:50%;
     background:radial-gradient(circle,rgba(255,246,200,.95),rgba(255,213,0,.45) 40%,transparent 70%);
     opacity:0;
-    animation:flash 30s ease-out 2s infinite;
+    animation:flash 30s ease-out var(--loop-delay,-25s) infinite;
   }
   .edge { position:absolute; z-index:-1; inset:0; pointer-events:none; }
   .edge.win {
@@ -127,29 +127,6 @@
     font-weight:900;
     line-height:1;
     text-shadow:0 2px 8px rgba(0,0,0,.75);
-  }
-  .champions-center {
-    position:absolute;
-    z-index:2;
-    top:50%;
-    left:50%;
-    display:flex;
-    width:var(--logo-w);
-    height:140px;
-    align-items:center;
-    justify-content:center;
-    pointer-events:none;
-    transform:translate(-50%,-50%);
-  }
-  .champions-logo {
-    display:block;
-    max-width:100%;
-    max-height:100%;
-    object-fit:contain;
-    filter:drop-shadow(0 5px 5px rgba(0,0,0,.8));
-    -webkit-mask-image:linear-gradient(#000 84%,transparent);
-    mask-image:linear-gradient(#000 84%,transparent);
-    animation:logo-dodge 30s ease-in-out 2s infinite;
   }
   .progress-row {
     display:grid;
@@ -194,7 +171,7 @@
   }
   .word.win { color:var(--green); text-shadow:0 0 16px rgba(47,139,255,.8),0 2px 8px rgba(0,0,0,.75); }
   .word.loss { color:var(--red); text-shadow:0 0 16px rgba(255,213,0,.8),0 2px 8px rgba(0,0,0,.75); }
-  .word.show { animation:word-pop 1s cubic-bezier(.2,1.2,.3,1) both; }
+  .word.show { animation:word-pop 1s cubic-bezier(.2,1.2,.3,1) .45s both; }
   @keyframes word-pop {
     0% { opacity:0; transform:scale(.4) translateY(10px); }
     25% { opacity:1; transform:scale(1.15) translateY(0); }
@@ -204,31 +181,51 @@
   @keyframes sweep { 0% { left:-20%; opacity:0; } 10% { opacity:1; } 55% { left:110%; opacity:1; } 60%,100% { left:110%; opacity:0; } }
   @keyframes texture-drift { from { background-position:0 0; } to { background-position:22px 0; } }
   @keyframes glow-breathe { 0%,100% { opacity:.55; } 50% { opacity:1; } }
-  /* One brofist every 30s: fists slide in from both sides (0-0.8s), meet at the
-     centre and hold (0.8-2s), then slide back out (2-2.6s). */
+  /* 30s cycle: fists rest at the centre for most of it. In the last 10% they run
+     out to the sides, the centre stays empty, then they run back in, hit at 96%
+     and stay. A score event restarts the cycle, so the two never overlap. */
   @keyframes fist-left {
-    0% { left:calc(var(--fist-w) * -1.2); animation-timing-function:cubic-bezier(.5,0,.8,.6); }
-    2.7% { left:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
-    3.4% { left:calc(50% - var(--fist-w) - 9px); }
-    6.5% { left:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
-    8.7%,100% { left:calc(var(--fist-w) * -1.2); }
+    0%,90% { left:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    91.5%,92.5% { left:calc(var(--fist-w) * -1.2); animation-timing-function:cubic-bezier(.5,0,.8,.6); }
+    96% { left:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
+    96.8%,100% { left:calc(50% - var(--fist-w) - 9px); }
   }
   @keyframes fist-right {
-    0% { right:calc(var(--fist-w) * -1.2); animation-timing-function:cubic-bezier(.5,0,.8,.6); }
-    2.7% { right:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
-    3.4% { right:calc(50% - var(--fist-w) - 9px); }
-    6.5% { right:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
-    8.7%,100% { right:calc(var(--fist-w) * -1.2); }
+    0%,90% { right:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    91.5%,92.5% { right:calc(var(--fist-w) * -1.2); animation-timing-function:cubic-bezier(.5,0,.8,.6); }
+    96% { right:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
+    96.8%,100% { right:calc(50% - var(--fist-w) - 9px); }
   }
-  @keyframes impact { 0%,2.6% { transform:scale(.4); opacity:0; } 2.8% { transform:scale(.6); opacity:.9; } 7%,100% { transform:scale(6); opacity:0; } }
-  @keyframes flash { 0%,2.6% { transform:scale(.3); opacity:0; } 3% { transform:scale(1.1); opacity:1; } 5.5%,100% { transform:scale(1.8); opacity:0; } }
-  /* The logo steps back so the fists are visible while they meet behind it. */
-  @keyframes logo-dodge {
-    0%,1% { opacity:1; transform:scale(1); }
-    2.6%,6.5% { opacity:.18; transform:scale(.86); }
-    9% { opacity:1; transform:scale(1.06); }
-    10.5%,100% { opacity:1; transform:scale(1); }
+  @keyframes impact { 0%,95.9% { transform:scale(.4); opacity:0; } 96.1% { transform:scale(.6); opacity:.9; } 100% { transform:scale(6); opacity:0; } }
+  @keyframes flash { 0%,95.9% { transform:scale(.3); opacity:0; } 96.3% { transform:scale(1.1); opacity:1; } 98.5%,100% { transform:scale(1.8); opacity:0; } }
+  /* Score events: the fist on the scoring side runs out while the WIN/LOSS word
+     shows, then returns with a ring. The animation is added next to the 30s
+     loop (same name, same duration), so the loop keeps its own timeline. */
+  .fist.left.hit { animation:fist-left 30s linear var(--loop-delay,-25s) infinite, fist-left-hit 2.1s linear; }
+  .fist.right.hit { animation:fist-right 30s linear var(--loop-delay,-25s) infinite, fist-right-hit 2.1s linear; }
+  .ring, .ring-flash { position:absolute; top:50%; left:50%; opacity:0; border-radius:50%; }
+  .ring { width:120px; height:120px; margin:-60px 0 0 -60px; border:3px solid; }
+  .ring-flash { width:150px; height:150px; margin:-75px 0 0 -75px; }
+  .ring.win { border-color:rgba(47,139,255,.85); }
+  .ring.loss { border-color:rgba(255,213,0,.85); }
+  .ring-flash.win { background:radial-gradient(circle,rgba(190,220,255,.95),rgba(47,139,255,.45) 40%,transparent 70%); }
+  .ring-flash.loss { background:radial-gradient(circle,rgba(255,246,200,.95),rgba(255,213,0,.45) 40%,transparent 70%); }
+  .ring.go { animation:ring-go .7s ease-out 1.95s forwards; }
+  .ring-flash.go { animation:ring-flash-go .45s ease-out 1.95s forwards; }
+  @keyframes fist-left-hit {
+    0% { left:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    21%,71% { left:10px; animation-timing-function:cubic-bezier(.5,0,.8,.6); }
+    93% { left:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
+    100% { left:calc(50% - var(--fist-w) - 9px); }
   }
+  @keyframes fist-right-hit {
+    0% { right:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    21%,71% { right:10px; animation-timing-function:cubic-bezier(.5,0,.8,.6); }
+    93% { right:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
+    100% { right:calc(50% - var(--fist-w) - 9px); }
+  }
+  @keyframes ring-go { from { transform:scale(.6); opacity:.9; } to { transform:scale(6); opacity:0; } }
+  @keyframes ring-flash-go { 0% { transform:scale(.3); opacity:0; } 25% { transform:scale(1.1); opacity:1; } 100% { transform:scale(1.8); opacity:0; } }
   @keyframes score-pop {
     0% { transform:translateY(-16px) scale(1.2); opacity:0; }
     100% { transform:translateY(0) scale(1); opacity:1; }
@@ -237,7 +234,6 @@
     .wrap { padding:32px 16px; }
     .card { padding:6px 12px 10px; }
     :root { --logo-w:100px; --fist-h:78px; }
-    .champions-center { height:110px; }
     .progress-row { gap:2px; }
     .progress-row { --seg-h:3px; margin:8px 0 0; }
   }
@@ -250,15 +246,12 @@
 <div class="wrap">
   <section class="card" id="card" aria-label="FUT Champions wins and losses">
     <div class="bg" aria-hidden="true"><span class="line-motion"></span>
-      <div class="fists"><span class="flash"></span><span class="impact"></span><span class="impact two"></span><span class="fist left"><img src="/assets/brofist/fist.png" alt=""></span><span class="fist right"><img src="/assets/brofist/fist.png" alt=""></span></div>
+      <div class="fists"><span class="flash"></span><span class="impact"></span><span class="impact two"></span><span class="fist left"><img src="/assets/brofist/fist.png" alt=""></span><span class="fist right"><img src="/assets/brofist/fist.png" alt=""></span><span class="ring-flash win" id="w-flash"></span><span class="ring win" id="w-ring"></span><span class="ring-flash loss" id="l-flash"></span><span class="ring loss" id="l-ring"></span></div>
     </div>
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
     <div class="scoreline">
       <div class="side wins"><span class="number" id="w">0</span><span class="word win" id="w-word">WIN</span></div>
-      <div class="champions-center">
-        <img class="champions-logo" src="/assets/brofist/man.png" alt="Logo">
-      </div>
       <div class="side loss"><span class="number" id="l">0</span><span class="word loss" id="l-word">LOSS</span></div>
     </div>
     <div class="progress-row" id="progress" role="group" aria-label="Match results"></div>
@@ -298,7 +291,8 @@
   let first = true;
   let shownHistory = [];
 
-  const WORD_MS = 1000;
+  const FIST_MS = 450;
+  const WORD_MS = FIST_MS + 1000;
   const timers = {};
 
   function setNumber(number, value) {
@@ -308,19 +302,38 @@
     number.classList.add('tick');
   }
 
+  function fistEvent(id) {
+    const fist = document.querySelector(id === 'w' ? '.fist.left' : '.fist.right');
+    const els = [fist, document.getElementById(id + '-ring'), document.getElementById(id + '-flash')];
+    els.forEach(el => el.classList.remove(el === fist ? 'hit' : 'go'));
+    // A leftover .hit on the other fist would replay its run-out when the loop restarts.
+    document.querySelectorAll('.fist.hit').forEach(el => el.classList.remove('hit'));
+    // Restart the 30s cycle from this moment so the loop never fires on top of the event.
+    const fists = document.querySelector('.fists');
+    const loopEls = fists.querySelectorAll('.fist, .impact, .flash');
+    fists.style.setProperty('--loop-delay', '0s');
+    loopEls.forEach(el => { el.style.animation = 'none'; });
+    void fist.offsetWidth;
+    loopEls.forEach(el => { el.style.animation = ''; });
+    els.forEach(el => el.classList.add(el === fist ? 'hit' : 'go'));
+  }
+
   function updateScore(id, value) {
     const number = document.getElementById(id);
     const word = document.getElementById(id + '-word');
     const previous = Number(number.dataset.value ?? number.textContent);
     number.dataset.value = String(value);
     clearTimeout(timers[id]);
+    clearTimeout(timers[id + 'out']);
     word.classList.remove('show');
     if (first || value <= previous) {
       number.classList.remove('out', 'tick');
       number.textContent = value;
       return;
     }
-    number.classList.add('out');
+    clearTimeout(timers[id + 'out']);
+    timers[id + 'out'] = setTimeout(() => number.classList.add('out'), FIST_MS);
+    fistEvent(id);
     void word.offsetWidth;
     word.classList.add('show');
     timers[id] = setTimeout(() => {
