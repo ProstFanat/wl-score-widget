@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brofist Smash</title>
+<style>
+  :root { --fist-h:96px; --fist-w:calc(var(--fist-h) * .867); --man-w:220px; --man-h:295px; }
+  html, body { margin:0; background:transparent; overflow:hidden; }
+  .stage { position:relative; width:640px; height:340px; margin:0 auto; }
+  .man, .shard { position:absolute; left:50%; top:50%; width:var(--man-w); height:var(--man-h); margin:calc(var(--man-h) / -2) 0 0 calc(var(--man-w) / -2); background:url("/assets/brofist/man.png") center / 100% 100% no-repeat; }
+  .man { filter:drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
+  .shard { will-change:transform,opacity; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+  .fist { position:absolute; top:50%; width:var(--fist-w); height:var(--fist-h); margin-top:calc(var(--fist-h) / -2); filter:drop-shadow(0 4px 6px rgba(0,0,0,.6)); z-index:3; }
+  .fist img { display:block; width:100%; height:100%; transform:rotate(48deg); }
+  .fist.right img { transform:scaleX(-1) rotate(48deg); }
+  .flash { position:absolute; left:50%; top:50%; width:200px; height:200px; margin:-100px 0 0 -100px; border-radius:50%; opacity:0; z-index:2;
+    background:radial-gradient(circle,rgba(255,246,200,.95),rgba(255,213,0,.45) 40%,transparent 70%); }
+  .ring { position:absolute; left:50%; top:50%; width:120px; height:120px; margin:-60px 0 0 -60px; border:3px solid rgba(255,213,0,.8); border-radius:50%; opacity:0; z-index:2; }
+  .ring.two { border-color:rgba(47,139,255,.85); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage" title="Click to replay">
+  <div class="man" id="man"></div>
+  <span class="flash" id="flash"></span><span class="ring" id="ring"></span><span class="ring two" id="ring2"></span>
+  <span class="fist left" id="fl"><img src="/assets/brofist/fist.png" alt=""></span>
+  <span class="fist right" id="fr"><img src="/assets/brofist/fist.png" alt=""></span>
+</div>
+<script>
+  const stage = document.getElementById('stage');
+  const man = document.getElementById('man');
+  const fl = document.getElementById('fl'), fr = document.getElementById('fr');
+  const flash = document.getElementById('flash'), ring = document.getElementById('ring'), ring2 = document.getElementById('ring2');
+  const W = 220, H = 295, COLS = 6, ROWS = 8;
+  const params = new URLSearchParams(location.search);
+  const LOOP = params.get('loop') !== '0';
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  // Jittered grid, each cell split into two triangles -> small irregular shards.
+  function buildShards() {
+    const pts = [];
+    for (let r = 0; r <= ROWS; r++) {
+      pts[r] = [];
+      for (let c = 0; c <= COLS; c++) {
+        const edge = r === 0 || c === 0 || r === ROWS || c === COLS;
+        const x = c * W / COLS + (c === 0 || c === COLS ? 0 : rand(-9, 9));
+        const y = r * H / ROWS + (r === 0 || r === ROWS ? 0 : rand(-9, 9));
+        pts[r][c] = [x, y];
+      }
+    }
+    const tris = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const a = pts[r][c], b = pts[r][c + 1], d = pts[r + 1][c], e = pts[r + 1][c + 1];
+      if ((r + c) % 2) { tris.push([a, b, d], [b, e, d]); } else { tris.push([a, b, e], [a, e, d]); }
+    }
+    return tris.map(t => {
+      const el = document.createElement('div');
+      el.className = 'shard';
+      el.style.clipPath = 'polygon(' + t.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',') + ')';
+      el.style.visibility = 'hidden';
+      stage.insertBefore(el, flash);
+      return { el, cx: (t[0][0] + t[1][0] + t[2][0]) / 3 - W / 2, cy: (t[0][1] + t[1][1] + t[2][1]) / 3 - H / 2 };
+    });
+  }
+
+  let shards = [], timers = [];
+  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  const FIST_W = 96 * .867;
+  // Fist resting offsets from stage centre, in px (fist box edge touching the man's side).
+  const HIT_X = W / 2 - 24;
+
+  function play() {
+    timers.forEach(clearTimeout); timers = [];
+    shards.forEach(s => s.el.remove());
+    shards = buildShards();
+    man.style.visibility = 'visible';
+    [fl, fr, man, flash, ring, ring2].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+    const cx = stage.clientWidth / 2;
+    const startOff = cx + FIST_W;            // fully outside the stage
+    const hitLeft = cx - HIT_X - FIST_W;     // left fist box x when it touches the man
+    const meetLeft = cx - FIST_W + 1;        // final: fists touching in the centre
+    const opts = { fill: 'forwards' };
+
+    // Fists run in, hit the man at 700ms, then carry on to touch each other.
+    fl.animate([
+      { left: -FIST_W + 'px', easing: 'cubic-bezier(.5,0,.8,.6)' },
+      { left: hitLeft + 'px', offset: .7, easing: 'ease-out' },
+      { left: meetLeft + 'px' }
+    ], { duration: 1000, ...opts });
+    fr.animate([
+      { right: -FIST_W + 'px', easing: 'cubic-bezier(.5,0,.8,.6)' },
+      { right: hitLeft + 'px', offset: .7, easing: 'ease-out' },
+      { right: meetLeft + 'px' }
+    ], { duration: 1000, ...opts });
+    fl.style.left = -FIST_W + 'px'; fr.style.right = -FIST_W + 'px';
+
+    // Man shudders on impact.
+    man.animate([
+      { transform: 'scale(1)' },
+      { transform: 'scale(1)', offset: .7 },
+      { transform: 'scale(.93,1.05)', offset: .76 },
+      { transform: 'scale(1.04,.96)' }
+    ], { duration: 1000, ...opts });
+
+    later(() => {
+      man.style.visibility = 'hidden';
+      flash.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1, offset: .2 }, { transform: 'scale(1.9)', opacity: 0 }], { duration: 550, easing: 'ease-out' });
+      ring.animate([{ transform: 'scale(.4)', opacity: .9 }, { transform: 'scale(5)', opacity: 0 }], { duration: 800, easing: 'ease-out' });
+      ring2.animate([{ transform: 'scale(.4)', opacity: .9 }, { transform: 'scale(5)', opacity: 0 }], { duration: 800, delay: 120, easing: 'ease-out', fill: 'backwards' });
+      shards.forEach(s => {
+        const dist = Math.hypot(s.cx, s.cy) || 1;
+        const power = rand(.9, 1.5) * (260 / (dist + 60)) * 1.6 + rand(0, .5);
+        const dx = (s.cx / dist) * power * 120 + rand(-30, 30);
+        const dy = (s.cy / dist) * power * 90 - rand(20, 90);
+        const rot = rand(-360, 360);
+        const dur = rand(900, 1500);
+        s.el.style.visibility = 'visible';
+        s.el.animate([
+          { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1 },
+          { transform: `translate(${dx * .6}px,${dy * .6 - 20}px) rotate(${rot * .5}deg) scale(.8)`, opacity: 1, offset: .5 },
+          { transform: `translate(${dx}px,${dy + 150}px) rotate(${rot}deg) scale(.2)`, opacity: 0 }
+        ], { duration: dur, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' });
+      });
+    }, 700);
+
+    // Fists fade out, then replay.
+    later(() => { [fl, fr].forEach(f => f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' })); }, 2800);
+    if (LOOP) later(play, 4500);
+  }
+
+  stage.addEventListener('click', play);
+  play();
+</script>
+</body>
+</html>

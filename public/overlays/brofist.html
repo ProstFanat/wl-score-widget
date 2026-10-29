@@ -45,6 +45,33 @@
     content:"";
   }
   .bg::before { animation:glow-breathe 6s ease-in-out infinite; }
+  .pitch {
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(180deg,rgba(6,16,38,.5),rgba(3,8,20,.62)),
+      repeating-linear-gradient(90deg,#1f6e36 0 36px,#278040 36px 72px);
+  }
+  .pitch::before, .pitch::after { position:absolute; content:""; }
+  .pitch::before { top:0; bottom:0; left:50%; width:2px; margin-left:-1px; background:rgba(255,255,255,.22); }
+  .pitch::after { top:50%; left:50%; width:110px; height:110px; margin:-55px 0 0 -55px; border:2px solid rgba(255,255,255,.22); border-radius:50%; }
+  .ball-lane { position:absolute; left:0; right:0; bottom:10px; height:26px; pointer-events:none; }
+  .ball {
+    position:absolute;
+    bottom:0;
+    left:-30px;
+    width:28px;
+    height:28px;
+    animation:ball-run 9s linear infinite;
+  }
+  .ball img { display:block; width:100%; height:100%; filter:drop-shadow(0 3px 2px rgba(0,0,0,.55)); animation:ball-spin 1.1s linear infinite; }
+  @keyframes ball-run {
+    0% { left:-30px; transform:translateY(0); }
+    10%,30%,50%,70%,90% { transform:translateY(-5px); }
+    20%,40%,60%,80% { transform:translateY(0); }
+    100% { left:calc(100% + 6px); transform:translateY(0); }
+  }
+  @keyframes ball-spin { to { transform:rotate(360deg); } }
   .line-motion {
     position:absolute;
     inset:0;
@@ -73,8 +100,8 @@
     filter:drop-shadow(0 4px 6px rgba(0,0,0,.6));
   }
   .fist img { display:block; width:100%; height:100%; transform:rotate(var(--tilt,48deg)); }
-  .fist.left { left:calc(50% - var(--fist-w) - 9px); animation:fist-left 30s linear var(--loop-delay,-25s) infinite; }
-  .fist.right { right:calc(50% - var(--fist-w) - 9px); animation:fist-right 30s linear var(--loop-delay,-25s) infinite; }
+  .fist.left { left:calc(50% - var(--fist-w) + 1px); animation:fist-left 30s linear var(--loop-delay,-25s) infinite; }
+  .fist.right { right:calc(50% - var(--fist-w) + 1px); animation:fist-right 30s linear var(--loop-delay,-25s) infinite; }
   .fist.right img { transform:scaleX(-1) rotate(var(--tilt,48deg)); }
   .impact {
     position:absolute;
@@ -185,16 +212,16 @@
      out to the sides, the centre stays empty, then they run back in, hit at 96%
      and stay. A score event restarts the cycle, so the two never overlap. */
   @keyframes fist-left {
-    0%,90% { left:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    0%,90% { left:calc(50% - var(--fist-w) + 1px); animation-timing-function:ease-in; }
     91.5%,92.5% { left:calc(var(--fist-w) * -1.2); animation-timing-function:cubic-bezier(.5,0,.8,.6); }
-    96% { left:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
-    96.8%,100% { left:calc(50% - var(--fist-w) - 9px); }
+    96% { left:calc(50% - var(--fist-w) + 6px); animation-timing-function:ease-out; }
+    96.8%,100% { left:calc(50% - var(--fist-w) + 1px); }
   }
   @keyframes fist-right {
-    0%,90% { right:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    0%,90% { right:calc(50% - var(--fist-w) + 1px); animation-timing-function:ease-in; }
     91.5%,92.5% { right:calc(var(--fist-w) * -1.2); animation-timing-function:cubic-bezier(.5,0,.8,.6); }
-    96% { right:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
-    96.8%,100% { right:calc(50% - var(--fist-w) - 9px); }
+    96% { right:calc(50% - var(--fist-w) + 6px); animation-timing-function:ease-out; }
+    96.8%,100% { right:calc(50% - var(--fist-w) + 1px); }
   }
   @keyframes impact { 0%,95.9% { transform:scale(.4); opacity:0; } 96.1% { transform:scale(.6); opacity:.9; } 100% { transform:scale(6); opacity:0; } }
   @keyframes flash { 0%,95.9% { transform:scale(.3); opacity:0; } 96.3% { transform:scale(1.1); opacity:1; } 98.5%,100% { transform:scale(1.8); opacity:0; } }
@@ -213,16 +240,16 @@
   .ring.go { animation:ring-go .7s ease-out 1.95s forwards; }
   .ring-flash.go { animation:ring-flash-go .45s ease-out 1.95s forwards; }
   @keyframes fist-left-hit {
-    0% { left:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    0% { left:calc(50% - var(--fist-w) + 1px); animation-timing-function:ease-in; }
     21%,71% { left:10px; animation-timing-function:cubic-bezier(.5,0,.8,.6); }
-    93% { left:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
-    100% { left:calc(50% - var(--fist-w) - 9px); }
+    93% { left:calc(50% - var(--fist-w) + 6px); animation-timing-function:ease-out; }
+    100% { left:calc(50% - var(--fist-w) + 1px); }
   }
   @keyframes fist-right-hit {
-    0% { right:calc(50% - var(--fist-w) - 9px); animation-timing-function:ease-in; }
+    0% { right:calc(50% - var(--fist-w) + 1px); animation-timing-function:ease-in; }
     21%,71% { right:10px; animation-timing-function:cubic-bezier(.5,0,.8,.6); }
-    93% { right:calc(50% - var(--fist-w) - 4px); animation-timing-function:ease-out; }
-    100% { right:calc(50% - var(--fist-w) - 9px); }
+    93% { right:calc(50% - var(--fist-w) + 6px); animation-timing-function:ease-out; }
+    100% { right:calc(50% - var(--fist-w) + 1px); }
   }
   @keyframes ring-go { from { transform:scale(.6); opacity:.9; } to { transform:scale(6); opacity:0; } }
   @keyframes ring-flash-go { 0% { transform:scale(.3); opacity:0; } 25% { transform:scale(1.1); opacity:1; } 100% { transform:scale(1.8); opacity:0; } }
@@ -245,7 +272,7 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="FUT Champions wins and losses">
-    <div class="bg" aria-hidden="true"><span class="line-motion"></span>
+    <div class="bg" aria-hidden="true"><span class="pitch"></span><span class="line-motion"></span><span class="ball-lane"><span class="ball"><img src="/assets/brofist/ball.png" alt=""></span></span>
       <div class="fists"><span class="flash"></span><span class="impact"></span><span class="impact two"></span><span class="fist left"><img src="/assets/brofist/fist.png" alt=""></span><span class="fist right"><img src="/assets/brofist/fist.png" alt=""></span><span class="ring-flash win" id="w-flash"></span><span class="ring win" id="w-ring"></span><span class="ring-flash loss" id="l-flash"></span><span class="ring loss" id="l-ring"></span></div>
     </div>
     <span class="edge win" aria-hidden="true"></span>

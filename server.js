@@ -74,6 +74,7 @@ const pages = {
   '/mancity': 'overlays/mancity.html',
   '/hetra-zidana': 'overlays/hetra-zidana.html',
   '/brofist': 'overlays/brofist.html',
+  '/brofist-smash': 'overlays/brofist-smash.html',
   '/black98': 'overlays/black98.html',
   '/adrian-v1': 'overlays/adrian-v1.html',
   '/adrian-v2': 'overlays/adrian-v2.html',
@@ -759,7 +760,7 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `assets/hetra/${hetraAsset[1]}.png`)));
   }
 
-  const brofistAsset = url.match(/^\/assets\/brofist\/(man|fist)\.png$/);
+  const brofistAsset = url.match(/^\/assets\/brofist\/(man|fist|ball)\.png$/);
   if (req.method === 'GET' && brofistAsset) {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `assets/brofist/${brofistAsset[1]}.png`)));
