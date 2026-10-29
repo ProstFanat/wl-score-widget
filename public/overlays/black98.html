@@ -44,35 +44,33 @@
     box-shadow:0 0 0 4px var(--ink),0 0 0 5px rgba(255,255,255,.45),0 12px 22px rgba(0,0,0,.55),0 0 26px rgba(255,255,255,.12);
     animation:outline-pulse 5s ease-in-out infinite;
   }
-  /* Spray-paint grain that jitters like a rough wall. */
+  /* Spray-paint grain that crawls slowly left to right (the tile is seamless). */
   .grain {
     position:absolute;
     inset:-20px;
     background:var(--grain);
     opacity:.5;
     mix-blend-mode:screen;
-    animation:grain-shift .7s steps(5) infinite;
+    animation:grain-drift 40s linear infinite;
   }
-  /* A pale spray cloud that slowly drifts behind the scores. */
-  .mist {
+  /* Faint diagonal texture drifting left to right, as in the default overlay. */
+  .lines {
     position:absolute;
-    top:-50%;
-    left:-10%;
-    width:55%;
-    height:200%;
-    background:radial-gradient(closest-side,rgba(255,255,255,.14),transparent);
-    animation:mist-drift 11s ease-in-out infinite alternate;
+    inset:0;
+    background:linear-gradient(45deg,transparent 46%,rgba(255,255,255,.06) 50%,transparent 54%);
+    background-size:22px 22px;
+    animation:texture-drift 5s linear infinite;
   }
-  .mist.two { left:auto; right:-10%; animation-duration:14s; animation-direction:alternate-reverse; background:radial-gradient(closest-side,rgba(255,255,255,.1),transparent); }
+  /* One soft band of light travelling slowly across the card. */
   .shine {
     position:absolute;
-    top:-40%;
-    bottom:-40%;
-    left:-25%;
-    width:80px;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
-    transform:skewX(-22deg);
-    animation:sweep 8s ease-in-out infinite;
+    top:-20%;
+    bottom:-20%;
+    left:-35%;
+    width:35%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);
+    transform:skewX(-20deg);
+    animation:sweep 14s linear infinite;
   }
   /* Spray spatter freckles in the corners. */
   .spatter {
@@ -85,8 +83,8 @@
       radial-gradient(circle at 94% 30%,#fff 0 1.5px,transparent 2px),
       radial-gradient(circle at 91% 76%,#fff 0 1px,transparent 1.6px),
       radial-gradient(circle at 96% 58%,#fff 0 1px,transparent 1.6px);
-    opacity:.55;
-    animation:glow-breathe 4s ease-in-out infinite;
+    opacity:.5;
+    animation:spatter-sway 14s ease-in-out infinite alternate;
   }
   .edge { position:absolute; z-index:-1; top:14px; bottom:14px; width:5px; border-radius:3px; }
   .edge.win { left:9px; background:var(--win); box-shadow:0 0 10px rgba(255,255,255,.7); animation:edge-flicker 6s linear infinite; }
@@ -157,7 +155,6 @@
     height:auto;
     aspect-ratio:637 / 379;
     filter:drop-shadow(0 6px 6px rgba(0,0,0,.85)) drop-shadow(0 0 10px rgba(255,255,255,.22));
-    animation:logo-glitch 12s steps(1) infinite;
   }
   .center::after {
     position:absolute;
@@ -212,23 +209,14 @@
     0%,100% { box-shadow:0 0 0 4px var(--ink),0 0 0 5px rgba(255,255,255,.45),0 12px 22px rgba(0,0,0,.55),0 0 20px rgba(255,255,255,.08); }
     50% { box-shadow:0 0 0 4px var(--ink),0 0 0 5px rgba(255,255,255,.7),0 12px 22px rgba(0,0,0,.55),0 0 34px rgba(255,255,255,.26); }
   }
-  @keyframes grain-shift {
-    0% { transform:translate(0,0); } 20% { transform:translate(-9px,6px); } 40% { transform:translate(7px,-11px); }
-    60% { transform:translate(-13px,-4px); } 80% { transform:translate(10px,9px); } 100% { transform:translate(0,0); }
-  }
-  @keyframes mist-drift { from { transform:translateX(-12%) scale(1); } to { transform:translateX(150%) scale(1.25); } }
-  @keyframes sweep { 0% { left:-25%; opacity:0; } 8% { opacity:1; } 45% { left:112%; opacity:1; } 50%,100% { left:112%; opacity:0; } }
-  @keyframes glow-breathe { 0%,100% { opacity:.3; } 50% { opacity:.7; } }
+  @keyframes texture-drift { from { background-position:0 0; } to { background-position:22px 0; } }
+  @keyframes grain-drift { from { background-position:0 0; } to { background-position:200px 0; } }
+  @keyframes spatter-sway { from { transform:translateX(-5px); } to { transform:translateX(5px); } }
+  @keyframes sweep { from { left:-35%; } to { left:110%; } }
   @keyframes edge-flicker { 0%,100% { opacity:1; } 91% { opacity:1; } 92% { opacity:.35; } 93% { opacity:1; } 95% { opacity:.5; } 96% { opacity:1; } }
   @keyframes logo-float {
     0%,100% { transform:translate(-50%,calc(-50% + var(--logo-drop))) rotate(-2deg); }
     50% { transform:translate(-50%,calc(-50% + var(--logo-drop) - 4px)) rotate(2deg); }
-  }
-  /* A short digital stutter every few seconds, like a fresh tag flickering. */
-  @keyframes logo-glitch {
-    0%,93%,96%,100% { transform:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.85)) drop-shadow(0 0 10px rgba(255,255,255,.22)); }
-    94% { transform:translate(-3px,1px) skewX(-6deg); filter:drop-shadow(3px 0 0 rgba(255,255,255,.7)) drop-shadow(-3px 0 0 rgba(120,120,120,.8)); }
-    95% { transform:translate(3px,-1px) skewX(5deg); filter:drop-shadow(-3px 0 0 rgba(255,255,255,.7)) drop-shadow(3px 0 0 rgba(120,120,120,.8)); }
   }
   @keyframes logo-shine { 0% { background-position:150% 0; } 22%,100% { background-position:-50% 0; } }
   @keyframes score-pop {
@@ -263,7 +251,7 @@
 <div class="wrap">
   <section class="card" id="card" aria-label="FUT Champions wins and losses">
     <div class="bg" aria-hidden="true">
-      <span class="mist"></span><span class="mist two"></span><span class="grain"></span><span class="spatter"></span><span class="shine"></span>
+      <span class="grain"></span><span class="lines"></span><span class="spatter"></span><span class="shine"></span>
     </div>
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
