@@ -96,7 +96,10 @@
   const pathParts = location.pathname.split('/');
   const roomMatch = location.pathname.match(/^\/room\/([a-f0-9]{32})\//);
   const isPreview = pathParts[1] === 'preview';
-  const groupResults = new URLSearchParams(location.search).get('group') === '1';
+  const params = new URLSearchParams(location.search);
+  const groupResults = params.get('group') === '1';
+  // sort=1: always list best score first (15-0, 14-1, 13-2 ...) instead of newest first
+  const sortResults = params.get('sort') === '1';
 
   const list = document.getElementById('result-list');
   const rowsByKey = new Map();
@@ -150,6 +153,7 @@
     const withIds = assignIds(clean);
     previous = withIds;
     const recent = [...withIds].reverse();
+    if (sortResults) recent.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
     const items = groupResults
       ? [...recent.reduce((groups, r) => {
         const key = `g${r.wins}-${r.losses}`;

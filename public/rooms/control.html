@@ -227,9 +227,11 @@
   }
   function updateResultLinks() {
     const group = document.getElementById('group-results').checked;
+    const sort = document.getElementById('sort-results').checked;
     for (const row of document.querySelectorAll('[data-result-url]')) {
       const url = new URL(row.dataset.resultUrl, location.origin);
       if (group) url.searchParams.set('group', '1');
+      if (sort) url.searchParams.set('sort', '1');
       row.querySelector('a').href = url.href;
     }
   }
@@ -333,6 +335,14 @@
       groupCheckbox.addEventListener('change', updateResultLinks);
       groupLabel.append(groupCheckbox, document.createTextNode('Group results'));
       links.appendChild(groupLabel);
+      const sortLabel = document.createElement('label');
+      sortLabel.className = 'group-option';
+      const sortCheckbox = document.createElement('input');
+      sortCheckbox.type = 'checkbox';
+      sortCheckbox.id = 'sort-results';
+      sortCheckbox.addEventListener('change', updateResultLinks);
+      sortLabel.append(sortCheckbox, document.createTextNode('Sort results (best score first)'));
+      links.appendChild(sortLabel);
       for (const [theme, label] of [['default', 'Default results'], ['halloween', 'Halloween results']]) {
         const row = addOverlayRow(links, label, data.resultOverlays[theme]);
         row.dataset.resultUrl = data.resultOverlays[theme];
