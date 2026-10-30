@@ -319,7 +319,7 @@
       update(data);
       roomViewId = data.viewId;
       const links = document.getElementById('links');
-      for (const [theme, label] of [['default', 'Default overlay'], ['halloween', 'Halloween overlay'], ['default-left', 'Default overlay (left)'], ['halloween-left', 'Halloween overlay (left)'], ['donetsk1y', 'Donetsk1y overlay']]) {
+      for (const [theme, label] of [['default', 'Default overlay'], ['halloween', 'Halloween overlay'], ['default-left', 'Default overlay (left)'], ['halloween-left', 'Halloween overlay (left)']]) {
         addOverlayRow(links, label, data.overlays[theme]);
       }
       const resultsHeading = document.createElement('div');
