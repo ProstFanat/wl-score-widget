@@ -27,7 +27,7 @@
     position:relative;
     box-sizing:border-box;
     width:min(var(--overlay-width),calc(100vw - 32px));
-    padding:8px 20px 12px;
+    padding:12px 20px;
     isolation:isolate;
     filter:drop-shadow(0 10px 14px rgba(0,0,0,.4));
   }
@@ -86,9 +86,9 @@
     filter:drop-shadow(0 0 6px rgba(108,195,255,.6));
   }
   .edge.loss {
-    background:var(--red);
+    background:var(--loss-fill);
     width:6px;left:auto;
-    filter:drop-shadow(0 0 6px rgba(255,184,28,.6));
+    filter:drop-shadow(0 0 6px rgba(255,37,45,.6));
   }
   .scoreline {
     display:grid;
@@ -127,7 +127,7 @@
     filter:drop-shadow(0 5px 5px rgba(0,0,0,.8));
   }
   .progress-row {
-    display:grid;
+    display:none; /* match-result lines hidden; logic kept, remove to restore */
     grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.5fr) var(--logo-w) minmax(0,.5fr) repeat(7,minmax(0,1fr));
     gap:4px;
     margin:12px 0 0;
@@ -170,7 +170,7 @@
     pointer-events:none;
   }
   .word.win { color:var(--green); text-shadow:0 0 16px rgba(108,195,255,.8),0 2px 8px rgba(0,0,0,.75); }
-  .word.loss { color:var(--red); text-shadow:0 0 16px rgba(255,184,28,.8),0 2px 8px rgba(0,0,0,.75); }
+  .word.loss { color:var(--loss-fill); text-shadow:0 0 16px rgba(255,37,45,.8),0 2px 8px rgba(0,0,0,.75); }
   .word.show { animation:word-pop 1s cubic-bezier(.2,1.2,.3,1) both; }
   @keyframes word-pop {
     0% { opacity:0; transform:scale(.4) translateY(10px); }
@@ -190,7 +190,7 @@
   }
   @media (max-width:500px) {
     .wrap { padding:32px 16px; }
-    .card { padding:6px 12px 10px; }
+    .card { padding:8px 12px; }
     :root { --logo-w:100px; }
     .champions-center { height:110px; }
     .progress-row { gap:2px; }
