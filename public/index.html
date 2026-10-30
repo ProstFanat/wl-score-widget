@@ -39,6 +39,7 @@
   .widget { transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
   .widget.halloween { --accent:#ff8733; --accent-glow:rgba(255,135,51,.14); border-color:rgba(255,135,51,.32); }
   .widget.mancity { --accent:#6cc3ff; --accent-glow:rgba(108,195,255,.14); border-color:rgba(108,195,255,.32); }
+  .widget.donetsk1y { --accent:#ff7a1a; --accent-glow:rgba(255,122,26,.16); border-color:rgba(255,122,26,.4); }
   .widget.default { --accent:var(--gold); --accent-glow:rgba(232,199,126,.13); border-color:rgba(232,199,126,.32); }
   .icon { display:grid; width:42px; height:42px; place-items:center; margin-bottom:14px; border:1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-radius:12px; background:color-mix(in srgb,var(--accent) 10%,transparent); color:var(--accent); font-size:21px; }
   .widget h3 { margin:0 0 6px; color:#f7f7f2; font-size:16px; }
@@ -117,6 +118,12 @@
       <h3>Man City</h3>
       <p>Animated sea and a sailing ship behind the sky-blue badge, with clear match results.</p>
       <button class="preview" type="button" data-preview="/preview/mancity" data-title="Man City">PREVIEW MAN CITY</button>
+    </article>
+    <article class="widget donetsk1y">
+      <div class="icon" aria-hidden="true">⚒</div>
+      <h3>Donetsk1y</h3>
+      <p>Orange and black with drifting crossed hammers behind the Shakhtar badge.</p>
+      <button class="preview" type="button" data-preview="/preview/donetsk1y" data-title="Donetsk1y">PREVIEW DONETSK1Y</button>
     </article>
   </section>
   <a class="sample-link" href="/example/results">View a combined current-score and vertical-results example ↗</a>

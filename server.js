@@ -72,6 +72,8 @@ const pages = {
   '/halloween': 'overlays/halloween.html',
   '/chupapi-v1': 'overlays/chupapi-v1.html',
   '/mancity': 'overlays/mancity.html',
+  '/donetsk1y': 'overlays/donetsk1y.html',
+  '/preview/donetsk1y': 'overlays/donetsk1y.html',
   '/hetra-zidana': 'overlays/hetra-zidana.html',
   '/brofist': 'overlays/brofist.html',
   '/brofist-smash': 'overlays/brofist-smash.html',
@@ -117,7 +119,7 @@ const legacyBoardIds = {
 };
 const roomClients = new Map();
 const ROOM_THEMES = ['default', 'halloween'];
-const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity'];
+const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'donetsk1y'];
 
 function roomOverlayLinks(viewId, suffix = '', themes = ROOM_THEMES) {
   return Object.fromEntries(themes.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
@@ -577,12 +579,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|hetra-zidana|brofist|black98|adrian-v1|adrian-v2)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|hetra-zidana|brofist|black98|adrian-v1|adrian-v2|donetsk1y)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'hetra-zidana', 'brofist', 'black98', 'adrian-v1', 'adrian-v2'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'hetra-zidana', 'brofist', 'black98', 'adrian-v1', 'adrian-v2', 'donetsk1y'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -780,6 +782,12 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/adrian-v1/parrot.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/adrian-v1/parrot.png')));
+  }
+
+  const donetskAsset = url.match(/^\/assets\/donetskiy\/(bg-shahtar\.png|shahtar_logo\.svg\.webp)$/);
+  if (req.method === 'GET' && donetskAsset) {
+    res.writeHead(200, { 'Content-Type': donetskAsset[1].endsWith('.webp') ? 'image/webp' : 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `assets/donetskiy/${donetskAsset[1]}`)));
   }
 
   if (req.method === 'GET' && url === '/assets/mancity_logo.webp') {
