@@ -838,6 +838,11 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/trident.png')));
   }
 
+  if (req.method === 'GET' && url === '/assets/Luc1fer24/trident-v2.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/trident-v2.png')));
+  }
+
   if (req.method === 'GET' && url === '/assets/FONTS/CruyffSans-Bold.ecd5078c.otf') {
     res.writeHead(200, { 'Content-Type': 'font/otf', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/FONTS/CruyffSans-Bold.ecd5078c.otf')));

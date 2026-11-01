@@ -14,8 +14,8 @@
   }
   :root {
     color-scheme:dark;
-    --green:#ff1018;
-    --red:#f0f0f0;
+    --green:#0b0000;
+    --red:#0b0000;
     --overlay-width:640px;
     --logo-w:130px;
   }
@@ -25,13 +25,13 @@
     position:relative;
     box-sizing:border-box;
     width:min(var(--overlay-width),calc(100vw - 32px));
-    padding:8px 20px 12px;
+    padding:0 20px;
     isolation:isolate;
-    clip-path:inset(-80px -60px 0 -60px);
+    clip-path:inset(-80px -60px -80px -60px);
   }
   .bg {
     position:absolute;
-    z-index:-2;
+    z-index:-1;
     inset:0;
     overflow:hidden;
     background:linear-gradient(180deg,rgba(20,20,20,.98),rgba(0,0,0,.98));
@@ -84,22 +84,22 @@
     animation:pulse 30s ease-out infinite;
   }
   .pulse.two { animation-delay:1.5s; }
-  .edge { position:absolute; z-index:-1; inset:0; pointer-events:none; }
+  .edge { position:absolute; z-index:0; inset:0; pointer-events:none; }
   .edge.win {
     background:var(--green);
     width:6px;right:auto;
-    filter:drop-shadow(0 0 6px rgba(0,239,101,.6));
+    filter:drop-shadow(0 0 6px rgba(0, 0, 0, 0.6));
   }
   .edge.loss {
     background:var(--red);
     width:6px;left:auto;
-    filter:drop-shadow(0 0 6px rgba(255,37,45,.6));
+    filter:drop-shadow(0 0 6px rgba(0, 0, 0, 0.6));
   }
   .scoreline {
     display:grid;
     grid-template-columns:1fr var(--logo-w) 1fr;
     align-items:center;
-    min-height:64px;
+    min-height:96px;
   }
   .side { display:grid; place-items:center; min-width:0; }
   .side > * { grid-area:1 / 1; }
@@ -116,19 +116,19 @@
   }
   .trident {
     position:absolute;
-    z-index:2;
+    z-index:0;
     left:50%;
-    top:30%;
-    width:112px;
-    height:168px;
+    top: 30%;
+    width:48px;
+    height:72px;
     object-fit:contain;
     pointer-events:none;
     opacity:0;
-    transform:translateX(-50%) translateY(var(--d,150px));
+    transform:translateX(-50%) translateY(0);
     transform-origin:center top;
   }
-  .trident.active { animation:trident-strike 1.5s linear both; }
-  .number.out { animation:number-drop 1.5s linear both; }
+  .trident.active { animation:trident-strike 1.4s linear both; }
+  .number.out { animation:number-drop 1.4s linear both; }
   .number.tick {
     animation:number-fall .55s cubic-bezier(.2,1.25,.35,1) both;
   }
@@ -154,36 +154,6 @@
     transform-style:preserve-3d;
     animation:logo-spin 30s linear infinite;
   }
-  .progress-row {
-    display:grid;
-    grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.5fr) var(--logo-w) minmax(0,.5fr) repeat(7,minmax(0,1fr));
-    gap:4px;
-    margin:12px 0 0;
-    align-items:center;
-    --seg-h:4px;
-  }
-  .progress-segment {
-    height:var(--seg-h);
-    background:rgba(230,239,239,.28);
-  }
-  .progress-segment:nth-child(8) { display:contents; }
-  .progress-segment:nth-child(8)::before,
-  .progress-segment:nth-child(8)::after {
-    height:var(--seg-h);
-    background:rgba(230,239,239,.28);
-    content:"";
-  }
-  .progress-segment:nth-child(8)::before { grid-column:8; }
-  .progress-segment:nth-child(8)::after { grid-column:10; }
-  .progress-segment:nth-child(8).win::before, .progress-segment:nth-child(8).win::after { background:linear-gradient(var(--green),var(--green)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
-  .progress-segment:nth-child(8).loss::before, .progress-segment:nth-child(8).loss::after { background:linear-gradient(var(--red),var(--red)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
-  .progress-segment.win { background:linear-gradient(var(--green),var(--green)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
-  .progress-segment.loss { background:linear-gradient(var(--red),var(--red)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
-  .progress-segment.fresh { animation:seg-fill .6s ease-out both; }
-  .progress-segment:nth-child(8).fresh { animation:none; }
-  .progress-segment:nth-child(8).fresh::before { animation:seg-fill .3s ease-out both; }
-  .progress-segment:nth-child(8).fresh::after { animation:seg-fill .3s ease-out .3s both; }
-  @keyframes seg-fill { from { background-size:0% 100%, auto; } to { background-size:100% 100%, auto; } }
   @keyframes sweep { 0% { left:-20%; opacity:0; } 10% { opacity:1; } 55% { left:110%; opacity:1; } 60%,100% { left:110%; opacity:0; } }
   @keyframes texture-drift { from { background-position:0 0; } to { background-position:22px 0; } }
   @keyframes pulse { 0% { transform:scale(.6); opacity:.7; } 15%,100% { transform:scale(7); opacity:0; } }
@@ -208,18 +178,16 @@
     100% { opacity:1; transform:translateY(0) scale(1); }
   }
   @keyframes trident-strike {
-    0% { opacity:1; transform:translateX(-50%) translateY(var(--d,150px)); animation-timing-function:cubic-bezier(.2,.7,.3,1); }
-    38% { opacity:1; transform:translateX(-50%) translateY(-6px); animation-timing-function:ease-in; }
-    44% { opacity:1; transform:translateX(-50%) translateY(-4px); animation-timing-function:ease-in; }
-    100% { opacity:1; transform:translateX(-50%) translateY(var(--d,150px)); }
+    0% { opacity:0; transform:translateX(-50%) translateY(0); animation-timing-function:cubic-bezier(.2,.7,.3,1); }
+    38% { opacity:1; transform:translateX(-50%) translateY(calc(var(--d,12px) * -1)); animation-timing-function:ease-in; }
+    44% { opacity:1; transform:translateX(-50%) translateY(calc(var(--d,12px) * -1)); animation-timing-function:ease-in; }
+    100% { opacity:0; transform:translateX(-50%) translateY(0); }
   }
   @media (max-width:500px) {
     .wrap { padding:32px 16px; }
-    .card { padding:6px 12px 10px; }
+    .card { padding:0 12px; }
     :root { --logo-w:100px; }
     .champions-center { height:110px; }
-    .progress-row { gap:2px; }
-    .progress-row { --seg-h:3px; margin:8px 0 0; }
   }
   @media (prefers-reduced-motion:reduce) {
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; }
@@ -233,46 +201,16 @@
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
     <div class="scoreline">
-      <div class="side wins"><span class="number" id="w">0</span><img class="trident" id="w-trident" src="/assets/Luc1fer24/trident.png?v=2" alt=""></div>
+      <div class="side wins"><span class="number" id="w">0</span><img class="trident" id="w-trident" src="/assets/Luc1fer24/trident-v2.png?v=2" alt=""></div>
       <div class="champions-center">
           <img class="champions-logo" src="/assets/Luc1fer24/Luc1fer24_logo.png" alt="Luc1fer24">
       </div>
-      <div class="side loss"><span class="number" id="l">0</span><img class="trident" id="l-trident" src="/assets/Luc1fer24/trident.png?v=2" alt=""></div>
+      <div class="side loss"><span class="number" id="l">0</span><img class="trident" id="l-trident" src="/assets/Luc1fer24/trident-v2.png?v=2" alt=""></div>
     </div>
-    <div class="progress-row" id="progress" role="group" aria-label="Match results"></div>
   </section>
 </div>
 <script>
   const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
-  const progress = document.getElementById('progress');
-  const progressSegments = 15;
-
-  for (let i = 0; i < progressSegments; i++) {
-    const segment = document.createElement('span');
-    segment.className = 'progress-segment';
-    progress.appendChild(segment);
-  }
-
-  // Whole-pixel, equal-width segments: fractional fr tracks render some
-  // segments 1px wider than others, which shows as a ragged line when resized.
-  const logoProbe = document.createElement('div');
-  logoProbe.style.cssText = 'position:absolute;visibility:hidden;width:var(--logo-w)';
-  document.body.appendChild(logoProbe);
-  function layoutProgress() {
-    const available = progress.clientWidth;
-    const logo = Math.round(logoProbe.getBoundingClientRect().width);
-    const minGap = window.matchMedia('(max-width:500px)').matches ? 2 : 4;
-    let segment = Math.floor((available - logo - 16 * minGap) / progressSegments);
-    segment -= segment % 2;
-    if (segment < 2) return;
-    const gap = Math.floor((available - logo - progressSegments * segment) / 16);
-    progress.style.gridTemplateColumns = `repeat(7,${segment}px) ${segment / 2}px ${logo}px ${segment / 2}px repeat(7,${segment}px)`;
-    progress.style.columnGap = `${gap}px`;
-    progress.style.justifyContent = 'center';
-  }
-  new ResizeObserver(layoutProgress).observe(progress);
-  layoutProgress();
-
   const card = document.getElementById('card');
   const fire = document.getElementById('fire');
   const SVGNS = 'http://www.w3.org/2000/svg';
@@ -320,10 +258,8 @@
   buildFire();
 
   let first = true;
-  let shownHistory = [];
-
   const timers = {};
-  const SCORE_ANIMATION_MS = 1500;
+  const SCORE_ANIMATION_MS = 1400;
 
   function setNumber(number, value) {
     number.textContent = value;
@@ -344,9 +280,14 @@
       number.textContent = value;
       return;
     }
-    const dist = card.getBoundingClientRect().bottom - (number.parentElement.getBoundingClientRect().top + number.parentElement.offsetHeight / 2) - 14;
-    trident.style.setProperty('--d', dist + 'px');
-    number.style.setProperty('--d', dist + 'px');
+    const numberDist = card.getBoundingClientRect().bottom
+      - (number.parentElement.getBoundingClientRect().top + number.parentElement.offsetHeight / 2)
+      - 14;
+    const tridentDist = card.getBoundingClientRect().bottom
+      - (number.parentElement.getBoundingClientRect().top + number.parentElement.offsetHeight / 2)
+      - trident.offsetHeight / 2;
+    trident.style.setProperty('--d', tridentDist + 'px');
+    number.style.setProperty('--d', numberDist + 'px');
     void trident.offsetWidth;
     trident.classList.add('active');
     number.classList.remove('tick');
@@ -360,24 +301,6 @@
   function render(state) {
     updateScore('w', state.wins);
     updateScore('l', state.losses);
-    const total = state.wins + state.losses;
-    const history = Array.isArray(state.history) && state.history.length === total
-      ? state.history
-      : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
-    [...progress.children].forEach((segment, index) => {
-      const result = history[index];
-      const isNew = !first && result && !shownHistory[index];
-      if (!result) segment.classList.remove('fresh');
-      if (isNew) {
-        segment.classList.remove('fresh');
-        void segment.offsetWidth;
-        segment.classList.add('fresh');
-      }
-      segment.classList.toggle('win', result === 'W');
-      segment.classList.toggle('loss', result === 'L');
-      segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
-    });
-    shownHistory = [...history];
     first = false;
   }
 
