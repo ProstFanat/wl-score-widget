@@ -36,23 +36,40 @@
     overflow:hidden;
     background:#fff;
   }
-  .bg-video {
+  .durka-lane {
     position:absolute;
-    top:50%;
-    left:-28%;
-    z-index:0;
-    display:block;
-    width:56%;
-    height:70%;
-    object-fit:contain;
-    object-position:center;
-    transform:translateY(-50%);
-    animation:durka-traverse 5s linear infinite;
+    left:0;
+    right:0;
+    bottom:8px;
+    height:112px;
+    pointer-events:none;
+  }
+  .durka {
+    position:absolute;
+    bottom:0;
+    left:-190px;
+    width:125px;
+    height:auto;
+    animation:durka-run 9s linear infinite;
     filter:drop-shadow(0 5px 5px rgba(0,0,0,.2));
   }
-  @keyframes durka-traverse {
-    from { left:-28%; }
-    to { left:100%; }
+  .durka img {
+    display:block;
+    width:100%;
+    height:auto;
+    animation:durka-dance .8s ease-in-out infinite;
+  }
+  @keyframes durka-run {
+    from { left:-190px; }
+    to { left:calc(100% + 10px); }
+  }
+  @keyframes durka-dance {
+    0%,100% { transform:scale(.88) translateY(0); }
+    18% { transform:scale(1.04,.96) translateY(-7px); }
+    35% { transform:scale(.92,1.08) translateY(0); }
+    52% { transform:scale(1.08,.92) translateY(-9px); }
+    70% { transform:scale(.94,1.06) translateY(-2px); }
+    86% { transform:scale(1.02,.98) translateY(-5px); }
   }
   .bg::before {
     position:absolute;
@@ -223,7 +240,7 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="FUT Champions wins and losses">
-    <div class="bg" aria-hidden="true"><video class="bg-video" src="/assets/durka/durka_bg.webm" autoplay muted loop playsinline></video><span class="line-motion"></span><span class="pulse"></span><span class="pulse two"></span></div>
+    <div class="bg" aria-hidden="true"><span class="durka-lane"><span class="durka"><img src="/assets/durka/durka_bg.PNG" alt=""></span></span><span class="line-motion"></span><span class="pulse"></span><span class="pulse two"></span></div>
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
     <div class="scoreline">

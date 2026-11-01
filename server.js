@@ -807,6 +807,11 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/durka/durka_logo.png')));
   }
 
+  if (req.method === 'GET' && url === '/assets/durka/durka_bg.PNG') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/durka/durka_bg.PNG')));
+  }
+
   if (req.method === 'GET' && url === '/assets/durka/durka_bg.webm') {
     res.writeHead(200, { 'Content-Type': 'video/webm', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/durka/durka_bg.webm')));
