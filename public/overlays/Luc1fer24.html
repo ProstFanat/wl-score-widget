@@ -1,0 +1,342 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luc1fer24 Score Overlay</title>
+<style>
+  @font-face {
+    font-family:"Cruyff Sans";
+    src:url("/assets/FONTS/CruyffSans-Bold.ecd5078c.otf") format("opentype");
+    font-style:normal;
+    font-weight:700;
+    font-display:swap;
+  }
+  :root {
+    color-scheme:dark;
+    --green:#ff1018;
+    --red:#f0f0f0;
+    --overlay-width:640px;
+    --logo-w:130px;
+  }
+  html, body { margin:0; background:transparent; color:#fff; font-family:"Cruyff Sans","Arial Narrow",Arial,sans-serif; }
+  .wrap { display:inline-block; padding:44px 24px; }
+  .card {
+    position:relative;
+    box-sizing:border-box;
+    width:min(var(--overlay-width),calc(100vw - 32px));
+    padding:8px 20px 12px;
+    isolation:isolate;
+    filter:drop-shadow(0 10px 14px rgba(0,0,0,.4));
+  }
+  .bg {
+    position:absolute;
+    z-index:-2;
+    inset:0;
+    overflow:hidden;
+    background:linear-gradient(180deg,rgba(20,20,20,.98),rgba(0,0,0,.98));
+  }
+  .bg::before {
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg,rgba(255,16,24,.2),transparent 30%,transparent 70%,rgba(255,16,24,.12));
+    content:"";
+  }
+  .bg::before { animation:glow-breathe 6s ease-in-out infinite; }
+  .line-motion {
+    position:absolute;
+    inset:0;
+    background:linear-gradient(45deg,transparent 46%,rgba(255,255,255,.05) 50%,transparent 54%);
+    background-size:22px 22px;
+    animation:texture-drift 5s linear infinite;
+  }
+  .line-motion::after {
+    position:absolute;
+    top:-40%;
+    bottom:-40%;
+    left:-20%;
+    width:90px;
+    background:linear-gradient(90deg,transparent,rgba(255,16,24,.22),transparent);
+    content:"";
+    transform:skewX(-22deg);
+    animation:sweep 7s ease-in-out infinite;
+  }
+  .pulse {
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:120px;
+    height:120px;
+    margin:-60px 0 0 -60px;
+    border:2px solid rgba(255,16,24,.45);
+    border-radius:50%;
+    opacity:0;
+    animation:pulse 30s ease-out infinite;
+  }
+  .pulse.two { animation-delay:1.5s; }
+  .edge { position:absolute; z-index:-1; inset:0; pointer-events:none; }
+  .edge.win {
+    background:var(--green);
+    width:6px;right:auto;
+    filter:drop-shadow(0 0 6px rgba(0,239,101,.6));
+  }
+  .edge.loss {
+    background:var(--red);
+    width:6px;left:auto;
+    filter:drop-shadow(0 0 6px rgba(255,37,45,.6));
+  }
+  .scoreline {
+    display:grid;
+    grid-template-columns:1fr var(--logo-w) 1fr;
+    align-items:center;
+    min-height:64px;
+  }
+  .side { display:grid; place-items:center; min-width:0; }
+  .side > * { grid-area:1 / 1; }
+  .side { position:relative; overflow:visible; }
+  .side.loss { grid-column:3; }
+  .number {
+    display:block;
+    font-size:60px;
+    font-weight:900;
+    line-height:1;
+    text-shadow:0 2px 8px rgba(0,0,0,.75);
+    position:relative;
+    z-index:1;
+  }
+  .trident {
+    position:absolute;
+    z-index:2;
+    left:50%;
+    bottom:-190px;
+    width:112px;
+    height:168px;
+    object-fit:contain;
+    pointer-events:none;
+    opacity:0;
+    transform:translateX(-50%) scale(.6);
+    transform-origin:center bottom;
+  }
+  .trident.active { animation:trident-rise 1s cubic-bezier(.2,.8,.25,1) both; }
+  .number.out {
+    animation:number-drop 1s cubic-bezier(.55,.05,.8,.35) .34s both;
+  }
+  .number.tick {
+    animation:number-fall .55s cubic-bezier(.2,1.25,.35,1) both;
+  }
+  .champions-center {
+    position:absolute;
+    z-index:2;
+    top:50%;
+    left:50%;
+    display:flex;
+    width:var(--logo-w);
+    height:140px;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    transform:translate(-50%,-50%);
+  }
+  .champions-logo {
+    display:block;
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    filter:drop-shadow(0 5px 5px rgba(0,0,0,.8));
+    transform-style:preserve-3d;
+    animation:logo-spin 30s linear infinite;
+  }
+  .progress-row {
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.5fr) var(--logo-w) minmax(0,.5fr) repeat(7,minmax(0,1fr));
+    gap:4px;
+    margin:12px 0 0;
+    align-items:center;
+    --seg-h:4px;
+  }
+  .progress-segment {
+    height:var(--seg-h);
+    background:rgba(230,239,239,.28);
+  }
+  .progress-segment:nth-child(8) { display:contents; }
+  .progress-segment:nth-child(8)::before,
+  .progress-segment:nth-child(8)::after {
+    height:var(--seg-h);
+    background:rgba(230,239,239,.28);
+    content:"";
+  }
+  .progress-segment:nth-child(8)::before { grid-column:8; }
+  .progress-segment:nth-child(8)::after { grid-column:10; }
+  .progress-segment:nth-child(8).win::before, .progress-segment:nth-child(8).win::after { background:linear-gradient(var(--green),var(--green)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
+  .progress-segment:nth-child(8).loss::before, .progress-segment:nth-child(8).loss::after { background:linear-gradient(var(--red),var(--red)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
+  .progress-segment.win { background:linear-gradient(var(--green),var(--green)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
+  .progress-segment.loss { background:linear-gradient(var(--red),var(--red)) left center / 100% 100% no-repeat, rgba(230,239,239,.28); }
+  .progress-segment.fresh { animation:seg-fill .6s ease-out both; }
+  .progress-segment:nth-child(8).fresh { animation:none; }
+  .progress-segment:nth-child(8).fresh::before { animation:seg-fill .3s ease-out both; }
+  .progress-segment:nth-child(8).fresh::after { animation:seg-fill .3s ease-out .3s both; }
+  @keyframes seg-fill { from { background-size:0% 100%, auto; } to { background-size:100% 100%, auto; } }
+  @keyframes sweep { 0% { left:-20%; opacity:0; } 10% { opacity:1; } 55% { left:110%; opacity:1; } 60%,100% { left:110%; opacity:0; } }
+  @keyframes texture-drift { from { background-position:0 0; } to { background-position:22px 0; } }
+  @keyframes pulse { 0% { transform:scale(.6); opacity:.7; } 15%,100% { transform:scale(7); opacity:0; } }
+  @keyframes glow-breathe { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+  @keyframes logo-spin {
+    0% { transform:rotateY(0); }
+    4% { transform:rotateY(360deg); }
+    100% { transform:rotateY(360deg); }
+  }
+  @keyframes score-pop {
+    0% { transform:translateY(-16px) scale(1.2); opacity:0; }
+    100% { transform:translateY(0) scale(1); opacity:1; }
+  }
+  @keyframes number-drop {
+    0%,32% { opacity:1; transform:translateY(0) scale(1); }
+    100% { opacity:0; transform:translateY(150px) scale(.72); }
+  }
+  @keyframes number-fall {
+    0% { opacity:0; transform:translateY(-70px) scale(.72); }
+    70% { opacity:1; transform:translateY(5px) scale(1.04); }
+    100% { opacity:1; transform:translateY(0) scale(1); }
+  }
+  @keyframes trident-rise {
+    0% { opacity:0; transform:translate(-50%,0) scale(.55) rotate(-8deg); }
+    18% { opacity:1; }
+    42% { opacity:1; transform:translate(-50%,-12px) scale(1) rotate(0); }
+    100% { opacity:0; transform:translate(-50%,150px) scale(.78) rotate(4deg); }
+  }
+  @media (max-width:500px) {
+    .wrap { padding:32px 16px; }
+    .card { padding:6px 12px 10px; }
+    :root { --logo-w:100px; }
+    .champions-center { height:110px; }
+    .progress-row { gap:2px; }
+    .progress-row { --seg-h:3px; margin:8px 0 0; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card" id="card" aria-label="FUT Champions wins and losses">
+    <div class="bg" aria-hidden="true"><span class="line-motion"></span><span class="pulse"></span><span class="pulse two"></span></div>
+    <span class="edge win" aria-hidden="true"></span>
+    <span class="edge loss" aria-hidden="true"></span>
+    <div class="scoreline">
+      <div class="side wins"><span class="number" id="w">0</span><img class="trident" id="w-trident" src="/assets/Luc1fer24/trident.png" alt=""></div>
+      <div class="champions-center">
+          <img class="champions-logo" src="/assets/Luc1fer24/Luc1fer24_logo.png" alt="Luc1fer24">
+      </div>
+      <div class="side loss"><span class="number" id="l">0</span><img class="trident" id="l-trident" src="/assets/Luc1fer24/trident.png" alt=""></div>
+    </div>
+    <div class="progress-row" id="progress" role="group" aria-label="Match results"></div>
+  </section>
+</div>
+<script>
+  const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
+  const progress = document.getElementById('progress');
+  const progressSegments = 15;
+
+  for (let i = 0; i < progressSegments; i++) {
+    const segment = document.createElement('span');
+    segment.className = 'progress-segment';
+    progress.appendChild(segment);
+  }
+
+  // Whole-pixel, equal-width segments: fractional fr tracks render some
+  // segments 1px wider than others, which shows as a ragged line when resized.
+  const logoProbe = document.createElement('div');
+  logoProbe.style.cssText = 'position:absolute;visibility:hidden;width:var(--logo-w)';
+  document.body.appendChild(logoProbe);
+  function layoutProgress() {
+    const available = progress.clientWidth;
+    const logo = Math.round(logoProbe.getBoundingClientRect().width);
+    const minGap = window.matchMedia('(max-width:500px)').matches ? 2 : 4;
+    let segment = Math.floor((available - logo - 16 * minGap) / progressSegments);
+    segment -= segment % 2;
+    if (segment < 2) return;
+    const gap = Math.floor((available - logo - progressSegments * segment) / 16);
+    progress.style.gridTemplateColumns = `repeat(7,${segment}px) ${segment / 2}px ${logo}px ${segment / 2}px repeat(7,${segment}px)`;
+    progress.style.columnGap = `${gap}px`;
+    progress.style.justifyContent = 'center';
+  }
+  new ResizeObserver(layoutProgress).observe(progress);
+  layoutProgress();
+
+  let first = true;
+  let shownHistory = [];
+
+  const timers = {};
+  const SCORE_ANIMATION_MS = 1340;
+
+  function setNumber(number, value) {
+    number.textContent = value;
+    number.classList.remove('out', 'tick');
+    void number.offsetWidth;
+    number.classList.add('tick');
+  }
+
+  function updateScore(id, value) {
+    const number = document.getElementById(id);
+    const trident = document.getElementById(id + '-trident');
+    const previous = Number(number.dataset.value ?? number.textContent);
+    number.dataset.value = String(value);
+    clearTimeout(timers[id]);
+    trident.classList.remove('active');
+    if (first || value <= previous) {
+      number.classList.remove('out', 'tick');
+      number.textContent = value;
+      return;
+    }
+    void trident.offsetWidth;
+    trident.classList.add('active');
+    number.classList.add('out');
+    timers[id] = setTimeout(() => {
+      setNumber(number, number.dataset.value);
+      trident.classList.remove('active');
+    }, SCORE_ANIMATION_MS);
+  }
+
+  function render(state) {
+    updateScore('w', state.wins);
+    updateScore('l', state.losses);
+    const total = state.wins + state.losses;
+    const history = Array.isArray(state.history) && state.history.length === total
+      ? state.history
+      : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
+    [...progress.children].forEach((segment, index) => {
+      const result = history[index];
+      const isNew = !first && result && !shownHistory[index];
+      if (!result) segment.classList.remove('fresh');
+      if (isNew) {
+        segment.classList.remove('fresh');
+        void segment.offsetWidth;
+        segment.classList.add('fresh');
+      }
+      segment.classList.toggle('win', result === 'W');
+      segment.classList.toggle('loss', result === 'L');
+      segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
+    });
+    shownHistory = [...history];
+    first = false;
+  }
+
+  const roomMatch = location.pathname.match(/^\/room\/([a-f0-9]{32})\//);
+  const isPreview = new URLSearchParams(location.search).get('preview') === '1' || location.pathname.startsWith('/preview/');
+
+  if (isPreview) {
+    if (window.self === window.top) {
+      const homeLink = document.createElement('a');
+      homeLink.href = '/';
+      homeLink.textContent = '← Scoreboard Studio';
+      homeLink.style.cssText = 'position:fixed;top:10px;left:12px;color:#fff;font:700 11px "Cruyff Sans",Arial,sans-serif;text-decoration:none';
+      document.body.appendChild(homeLink);
+    }
+    render({ wins:5, losses:4, history:[...'WLWWLWWLL'], max:15 });
+  } else {
+    new EventSource(roomMatch ? `/room/${roomMatch[1]}/events` : BASE + '/default/events').onmessage = event => render(JSON.parse(event.data));
+  }
+</script>
+</body>
+</html>

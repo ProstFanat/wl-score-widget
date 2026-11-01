@@ -97,6 +97,8 @@ const pages = {
   '/phoenix-overlay': 'overlays/phoenix-overlay.html',
   '/phoenix-upg': 'overlays/phoenix-upg.html',
   '/default': 'overlays/default.html',
+  '/Luc1fer24': 'overlays/Luc1fer24.html',
+  '/preview/Luc1fer24': 'overlays/Luc1fer24.html',
   '/durka': 'overlays/durka.html',
   '/default/control': 'controls/default.html',
   '/champions': 'overlays/default.html',
@@ -824,6 +826,16 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/FUT_Champions_CUP.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/FUT_Champions_CUP.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/Luc1fer24/Luc1fer24_logo.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/Luc1fer24_logo.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/Luc1fer24/trident.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/trident.png')));
   }
 
   if (req.method === 'GET' && url === '/assets/FONTS/CruyffSans-Bold.ecd5078c.otf') {
