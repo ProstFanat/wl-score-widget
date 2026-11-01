@@ -78,8 +78,8 @@ const pages = {
   '/brofist': 'overlays/brofist.html',
   '/brofist-smash': 'overlays/brofist-smash.html',
   '/black98': 'overlays/black98.html',
-  '/Luc1fer24': 'overlays/Luc1fer24.html',
-  '/preview/Luc1fer24': 'overlays/Luc1fer24.html',
+  '/luc1fer24': 'overlays/luc1fer24.html',
+  '/preview/luc1fer24': 'overlays/luc1fer24.html',
   '/adrian-v1': 'overlays/adrian-v1.html',
   '/adrian-v2': 'overlays/adrian-v2.html',
   '/preview/adrian-v2': 'overlays/adrian-v2.html',
@@ -583,12 +583,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|durka|hetra-zidana|brofist|black98|Luc1fer24|adrian-v1|adrian-v2|donetsk1y)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'durka', 'hetra-zidana', 'brofist', 'black98', 'Luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -828,19 +828,19 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/FUT_Champions_CUP.png')));
   }
 
-  if (req.method === 'GET' && url === '/assets/Luc1fer24/Luc1fer24_logo.png') {
+  if (req.method === 'GET' && url === '/assets/luc1fer24/luc1fer24_logo.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
-    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/Luc1fer24_logo.png')));
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/luc1fer24/luc1fer24_logo.png')));
   }
 
-  if (req.method === 'GET' && url === '/assets/Luc1fer24/trident.png') {
+  if (req.method === 'GET' && url === '/assets/luc1fer24/trident.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
-    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/trident.png')));
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/luc1fer24/trident.png')));
   }
 
-  if (req.method === 'GET' && url === '/assets/Luc1fer24/trident-v2.png') {
+  if (req.method === 'GET' && url === '/assets/luc1fer24/trident-v2.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
-    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/Luc1fer24/trident-v2.png')));
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/luc1fer24/trident-v2.png')));
   }
 
   if (req.method === 'GET' && url === '/assets/FONTS/CruyffSans-Bold.ecd5078c.otf') {
