@@ -27,7 +27,7 @@
     width:min(var(--overlay-width),calc(100vw - 32px));
     padding:8px 20px 12px;
     isolation:isolate;
-    filter:drop-shadow(0 10px 14px rgba(0,0,0,.4));
+    clip-path:inset(-80px -60px 0 -60px);
   }
   .bg {
     position:absolute;
@@ -35,6 +35,16 @@
     inset:0;
     overflow:hidden;
     background:linear-gradient(180deg,rgba(20,20,20,.98),rgba(0,0,0,.98));
+    filter:drop-shadow(0 10px 14px rgba(0,0,0,.4));
+  }
+  .fire { position:absolute; left:0; right:0; bottom:0; height:44px; pointer-events:none; }
+  .fire svg { display:block; width:100%; height:100%; overflow:visible; }
+  .flame { transform-box:fill-box; transform-origin:50% 100%; animation:flame-flicker 1s ease-in-out infinite; }
+  @keyframes flame-flicker {
+    0%,100% { transform:scale(1,1) skewX(0); }
+    25% { transform:scale(.92,1.14) skewX(var(--lean,4deg)); }
+    50% { transform:scale(1.06,.86) skewX(0); }
+    75% { transform:scale(.95,1.08) skewX(calc(var(--lean,4deg) * -1)); }
   }
   .bg::before {
     position:absolute;
@@ -108,19 +118,17 @@
     position:absolute;
     z-index:2;
     left:50%;
-    bottom:-190px;
+    top:30%;
     width:112px;
     height:168px;
     object-fit:contain;
     pointer-events:none;
     opacity:0;
-    transform:translateX(-50%) scale(.6);
-    transform-origin:center bottom;
+    transform:translateX(-50%) translateY(var(--d,150px));
+    transform-origin:center top;
   }
-  .trident.active { animation:trident-rise 1s cubic-bezier(.2,.8,.25,1) both; }
-  .number.out {
-    animation:number-drop 1s cubic-bezier(.55,.05,.8,.35) .34s both;
-  }
+  .trident.active { animation:trident-strike 1.5s linear both; }
+  .number.out { animation:number-drop 1.5s linear both; }
   .number.tick {
     animation:number-fall .55s cubic-bezier(.2,1.25,.35,1) both;
   }
@@ -190,19 +198,20 @@
     100% { transform:translateY(0) scale(1); opacity:1; }
   }
   @keyframes number-drop {
-    0%,32% { opacity:1; transform:translateY(0) scale(1); }
-    100% { opacity:0; transform:translateY(150px) scale(.72); }
+    0%,38% { opacity:1; transform:translateY(0) scale(1); animation-timing-function:ease-in; }
+    44% { opacity:1; transform:translateY(-4px) scale(1.12); animation-timing-function:ease-in; }
+    100% { opacity:0; transform:translateY(var(--d,150px)) scale(.72); }
   }
   @keyframes number-fall {
     0% { opacity:0; transform:translateY(-70px) scale(.72); }
     70% { opacity:1; transform:translateY(5px) scale(1.04); }
     100% { opacity:1; transform:translateY(0) scale(1); }
   }
-  @keyframes trident-rise {
-    0% { opacity:0; transform:translate(-50%,0) scale(.55) rotate(-8deg); }
-    18% { opacity:1; }
-    42% { opacity:1; transform:translate(-50%,-12px) scale(1) rotate(0); }
-    100% { opacity:0; transform:translate(-50%,150px) scale(.78) rotate(4deg); }
+  @keyframes trident-strike {
+    0% { opacity:1; transform:translateX(-50%) translateY(var(--d,150px)); animation-timing-function:cubic-bezier(.2,.7,.3,1); }
+    38% { opacity:1; transform:translateX(-50%) translateY(-6px); animation-timing-function:ease-in; }
+    44% { opacity:1; transform:translateX(-50%) translateY(-4px); animation-timing-function:ease-in; }
+    100% { opacity:1; transform:translateX(-50%) translateY(var(--d,150px)); }
   }
   @media (max-width:500px) {
     .wrap { padding:32px 16px; }
@@ -220,15 +229,15 @@
 <body>
 <div class="wrap">
   <section class="card" id="card" aria-label="FUT Champions wins and losses">
-    <div class="bg" aria-hidden="true"><span class="line-motion"></span><span class="pulse"></span><span class="pulse two"></span></div>
+    <div class="bg" aria-hidden="true"><span class="line-motion"></span><span class="pulse"></span><span class="pulse two"></span><div class="fire" id="fire"></div></div>
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
     <div class="scoreline">
-      <div class="side wins"><span class="number" id="w">0</span><img class="trident" id="w-trident" src="/assets/Luc1fer24/trident.png" alt=""></div>
+      <div class="side wins"><span class="number" id="w">0</span><img class="trident" id="w-trident" src="/assets/Luc1fer24/trident.png?v=2" alt=""></div>
       <div class="champions-center">
           <img class="champions-logo" src="/assets/Luc1fer24/Luc1fer24_logo.png" alt="Luc1fer24">
       </div>
-      <div class="side loss"><span class="number" id="l">0</span><img class="trident" id="l-trident" src="/assets/Luc1fer24/trident.png" alt=""></div>
+      <div class="side loss"><span class="number" id="l">0</span><img class="trident" id="l-trident" src="/assets/Luc1fer24/trident.png?v=2" alt=""></div>
     </div>
     <div class="progress-row" id="progress" role="group" aria-label="Match results"></div>
   </section>
@@ -264,11 +273,57 @@
   new ResizeObserver(layoutProgress).observe(progress);
   layoutProgress();
 
+  const card = document.getElementById('card');
+  const fire = document.getElementById('fire');
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  // Overlapping teardrop tongues, wider than their spacing, so the row is
+  // continuous: no gaps, no flat edges along the flame line.
+  function buildFire() {
+    const W = Math.max(card.clientWidth, 100), H = 44;
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    const layers = [
+      { color:'#7a0008', step:22, h:[28,44], w:1.9, y:6 },
+      { color:'#d3101a', step:18, h:[22,36], w:1.9, y:4 },
+      { color:'#ff4a12', step:15, h:[16,28], w:1.9, y:2 },
+      { color:'#ff9a1a', step:12, h:[11,19], w:1.9, y:1 },
+      { color:'#ffd84a', step:10, h:[6,11], w:1.9, y:0 }
+    ];
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (const layer of layers) {
+      const g = document.createElementNS(SVGNS, 'g');
+      g.setAttribute('fill', layer.color);
+      for (let x = -layer.step; x < W + layer.step * 2; x += layer.step * (.8 + rnd() * .4)) {
+        const h = layer.h[0] + rnd() * (layer.h[1] - layer.h[0]);
+        const hw = layer.step * layer.w;
+        const lean = (rnd() - .5) * layer.step * 1.4;
+        const base = H + 6, top = H - h + layer.y;
+        const path = document.createElementNS(SVGNS, 'path');
+        path.setAttribute('d',
+          `M${x - hw} ${base} C${x - hw * .5} ${base - h * .35} ${x - hw * .35 + lean * .9} ${top + h * .55} ${x + lean} ${top}` +
+          ` C${x + hw * .1 + lean * 1.1} ${top + h * .5} ${x + hw * .5} ${base - h * .35} ${x + hw} ${base} Z`);
+        path.setAttribute('class', 'flame');
+        path.style.animationDuration = (.7 + rnd() * .9).toFixed(2) + 's';
+        path.style.animationDelay = (-rnd() * 2).toFixed(2) + 's';
+        path.style.setProperty('--lean', (3 + rnd() * 6).toFixed(1) + 'deg');
+        g.appendChild(path);
+      }
+      svg.appendChild(g);
+    }
+    fire.replaceChildren(svg);
+  }
+  let fireWidth = 0;
+  new ResizeObserver(() => { if (card.clientWidth !== fireWidth) { fireWidth = card.clientWidth; buildFire(); } }).observe(card);
+  buildFire();
+
   let first = true;
   let shownHistory = [];
 
   const timers = {};
-  const SCORE_ANIMATION_MS = 1340;
+  const SCORE_ANIMATION_MS = 1500;
 
   function setNumber(number, value) {
     number.textContent = value;
@@ -289,8 +344,12 @@
       number.textContent = value;
       return;
     }
+    const dist = card.getBoundingClientRect().bottom - (number.parentElement.getBoundingClientRect().top + number.parentElement.offsetHeight / 2) - 14;
+    trident.style.setProperty('--d', dist + 'px');
+    number.style.setProperty('--d', dist + 'px');
     void trident.offsetWidth;
     trident.classList.add('active');
+    number.classList.remove('tick');
     number.classList.add('out');
     timers[id] = setTimeout(() => {
       setNumber(number, number.dataset.value);
