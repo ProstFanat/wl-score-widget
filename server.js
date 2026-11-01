@@ -97,6 +97,7 @@ const pages = {
   '/phoenix-overlay': 'overlays/phoenix-overlay.html',
   '/phoenix-upg': 'overlays/phoenix-upg.html',
   '/default': 'overlays/default.html',
+  '/durka': 'overlays/durka.html',
   '/default/control': 'controls/default.html',
   '/champions': 'overlays/default.html',
   '/champions/control': 'controls/default.html',
@@ -106,6 +107,7 @@ const pages = {
   '/camera-frames': 'camera-frames/index.html',
   '/camera-frames/halloween': 'camera-frames/halloween.html',
   '/preview/default': 'overlays/default.html',
+  '/preview/durka': 'overlays/durka.html',
   '/preview/halloween': 'overlays/halloween.html',
   '/preview/champions': 'overlays/default.html',
   '/preview/default/results': 'overlays/results.html',
@@ -798,6 +800,16 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/mancity_ship.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/mancity_ship.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/durka/durka_logo.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/durka/durka_logo.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/durka/durka_bg.webm') {
+    res.writeHead(200, { 'Content-Type': 'video/webm', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/durka/durka_bg.webm')));
   }
 
   if (req.method === 'GET' && url === '/assets/chupapi_logo.png') {
