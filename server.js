@@ -72,6 +72,7 @@ const pages = {
   '/halloween': 'overlays/halloween.html',
   '/chupapi-v1': 'overlays/chupapi-v1.html',
   '/mancity': 'overlays/mancity.html',
+  '/mancity-wo-logo': 'overlays/mancity-wo-logo.html',
   '/donetsk1y': 'overlays/donetsk1y.html',
   '/preview/donetsk1y': 'overlays/donetsk1y.html',
   '/hetra-zidana': 'overlays/hetra-zidana.html',
@@ -90,6 +91,7 @@ const pages = {
   '/chupapi-v2': 'overlays/chupapi-v2.html',
   '/preview/chupapi-v2': 'overlays/chupapi-v2.html',
   '/preview/mancity': 'overlays/mancity.html',
+  '/preview/mancity-wo-logo': 'overlays/mancity-wo-logo.html',
   '/preview/chupapi-v1': 'overlays/chupapi-v1.html',
   '/default-left': 'overlays/default-left.html',
   '/halloween-left': 'overlays/halloween-left.html',
@@ -123,7 +125,7 @@ const legacyBoardIds = {
 };
 const roomClients = new Map();
 const ROOM_THEMES = ['default', 'halloween'];
-const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'durka'];
+const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'mancity-wo-logo', 'durka'];
 
 function roomOverlayLinks(viewId, suffix = '', themes = ROOM_THEMES) {
   return Object.fromEntries(themes.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
@@ -583,12 +585,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
