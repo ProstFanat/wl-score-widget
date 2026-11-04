@@ -94,6 +94,7 @@ const pages = {
   '/preview/mancity-wo-logo': 'overlays/mancity-wo-logo.html',
   '/preview/chupapi-v1': 'overlays/chupapi-v1.html',
   '/default-left': 'overlays/default-left.html',
+  '/champions-league': 'overlays/champions-league.html',
   '/halloween-left': 'overlays/halloween-left.html',
   '/preview/default-left': 'overlays/default-left.html',
   '/preview/halloween-left': 'overlays/halloween-left.html',
@@ -114,6 +115,7 @@ const pages = {
   '/preview/durka': 'overlays/durka.html',
   '/preview/halloween': 'overlays/halloween.html',
   '/preview/champions': 'overlays/default.html',
+  '/preview/champions-league': 'overlays/champions-league.html',
   '/preview/default/results': 'overlays/results.html',
   '/preview/halloween/results': 'overlays/results.html',
   '/example/results': 'rooms/results-example.html',
@@ -125,7 +127,7 @@ const legacyBoardIds = {
 };
 const roomClients = new Map();
 const ROOM_THEMES = ['default', 'halloween'];
-const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'mancity-wo-logo', 'durka'];
+const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'mancity-wo-logo', 'durka', 'champions-league'];
 
 function roomOverlayLinks(viewId, suffix = '', themes = ROOM_THEMES) {
   return Object.fromEntries(themes.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
@@ -585,12 +587,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y|champions-league)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y', 'champions-league'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -864,6 +866,30 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/phoenix_upg.gif') {
     res.writeHead(200, { 'Content-Type': 'image/gif', 'Cache-Control': 'public, max-age=86400' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/phoenix_upg.gif')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/champions-league/champions-league-logo.webp') {
+    res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/champions-league/champions-league-logo.webp')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/champions-league/champios-league-bg.webm') {
+    const file = path.join(PUBLIC_DIR, 'assets/champions-league/champios-league-bg.webm');
+    const size = fs.statSync(file).size;
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      let start = range[1] ? Number(range[1]) : size - Number(range[2]);
+      let end = range[1] && range[2] ? Number(range[2]) : size - 1;
+      end = Math.min(end, size - 1);
+      if (start < 0 || start > end) {
+        res.writeHead(416, { 'Content-Range': `bytes */${size}` });
+        return res.end();
+      }
+      res.writeHead(206, { 'Content-Type': 'video/webm', 'Accept-Ranges': 'bytes', 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1, 'Cache-Control': 'public, max-age=86400' });
+      return fs.createReadStream(file, { start, end }).pipe(res);
+    }
+    res.writeHead(200, { 'Content-Type': 'video/webm', 'Accept-Ranges': 'bytes', 'Content-Length': size, 'Cache-Control': 'public, max-age=86400' });
+    return fs.createReadStream(file).pipe(res);
   }
 
   if (req.method === 'GET' && url === '/assets/ComfyUI_00002_.mp4') {

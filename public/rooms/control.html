@@ -319,7 +319,7 @@
       update(data);
       roomViewId = data.viewId;
       const links = document.getElementById('links');
-      for (const [theme, label] of [['default', 'Default overlay'], ['halloween', 'Halloween overlay'], ['durka', 'Durka overlay'], ['default-left', 'Default overlay (left)'], ['halloween-left', 'Halloween overlay (left)']]) {
+      for (const [theme, label] of [['default', 'Default overlay'], ['halloween', 'Halloween overlay'], ['durka', 'Durka overlay'], ['champions-league', 'Champions League overlay'], ['default-left', 'Default overlay (left)'], ['halloween-left', 'Halloween overlay (left)']]) {
         addOverlayRow(links, label, data.overlays[theme]);
       }
       const resultsHeading = document.createElement('div');
