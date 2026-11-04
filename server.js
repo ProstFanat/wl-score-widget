@@ -94,7 +94,8 @@ const pages = {
   '/preview/mancity-wo-logo': 'overlays/mancity-wo-logo.html',
   '/preview/chupapi-v1': 'overlays/chupapi-v1.html',
   '/default-left': 'overlays/default-left.html',
-  '/champions-league': 'overlays/champions-league.html',
+  '/champions-league-v1': 'overlays/champions-league-v1.html',
+  '/champions-league-v2': 'overlays/champions-league-v2.html',
   '/halloween-left': 'overlays/halloween-left.html',
   '/preview/default-left': 'overlays/default-left.html',
   '/preview/halloween-left': 'overlays/halloween-left.html',
@@ -115,7 +116,8 @@ const pages = {
   '/preview/durka': 'overlays/durka.html',
   '/preview/halloween': 'overlays/halloween.html',
   '/preview/champions': 'overlays/default.html',
-  '/preview/champions-league': 'overlays/champions-league.html',
+  '/preview/champions-league-v1': 'overlays/champions-league-v1.html',
+  '/preview/champions-league-v2': 'overlays/champions-league-v2.html',
   '/preview/default/results': 'overlays/results.html',
   '/preview/halloween/results': 'overlays/results.html',
   '/example/results': 'rooms/results-example.html',
@@ -127,7 +129,7 @@ const legacyBoardIds = {
 };
 const roomClients = new Map();
 const ROOM_THEMES = ['default', 'halloween'];
-const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'mancity-wo-logo', 'durka', 'champions-league'];
+const ROOM_OVERLAY_THEMES = [...ROOM_THEMES, 'default-left', 'halloween-left', 'mancity', 'mancity-wo-logo', 'durka', 'champions-league-v1', 'champions-league-v2'];
 
 function roomOverlayLinks(viewId, suffix = '', themes = ROOM_THEMES) {
   return Object.fromEntries(themes.map(theme => [theme, `/room/${viewId}/${theme}${suffix}`]));
@@ -587,12 +589,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y|champions-league)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y|champions-league-v1|champions-league-v2)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y', 'champions-league'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y', 'champions-league-v1', 'champions-league-v2'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -873,8 +875,13 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/champions-league/champions-league-logo.webp')));
   }
 
-  if (req.method === 'GET' && url === '/assets/champions-league/champios-league-bg.webm') {
-    const file = path.join(PUBLIC_DIR, 'assets/champions-league/champios-league-bg.webm');
+  if (req.method === 'GET' && url === '/assets/champions-league/champions-league-ball.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/champions-league/champions-league-ball.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/champions-league/champions-league-bg.webm') {
+    const file = path.join(PUBLIC_DIR, 'assets/champions-league/champions-league-bg.webm');
     const size = fs.statSync(file).size;
     const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
     if (range && (range[1] || range[2])) {
