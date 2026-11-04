@@ -24,7 +24,7 @@
     --green:#00ef65;
     --red:#ff252d;
     --overlay-width:640px;
-    --logo-w:130px;
+    --logo-w:80px;
   }
   html, body { margin:0; background:transparent; color:#fff; font-family:"Cruyff Sans","Arial Narrow",Arial,sans-serif; }
   .wrap { display:inline-block; padding:44px 24px; }
@@ -83,7 +83,7 @@
     top:50%;
     left:50%;
     width:120px;
-    height:130px;
+    height:80px;
     margin:-60px 0 0 -60px;
     border:2px solid rgba(255,206,110,.4);
     border-radius:50%;
@@ -139,7 +139,7 @@
     object-fit:contain;
     filter:drop-shadow(0 5px 5px rgba(0,0,0,.8));
     transform-style:preserve-3d;
-    animation:logo-spin 30s linear infinite;
+    animation:ball-spin 8s linear infinite;
   }
   .splitter {
     text-align:center;
@@ -204,11 +204,7 @@
   @keyframes texture-drift { from { background-position:0 0; } to { background-position:22px 0; } }
   @keyframes pulse { 0% { transform:scale(.6); opacity:.7; } 15%,100% { transform:scale(7); opacity:0; } }
   @keyframes glow-breathe { 0%,100% { opacity:.55; } 50% { opacity:1; } }
-  @keyframes logo-spin {
-    0% { transform:rotateY(0); }
-    4% { transform:rotateY(360deg); }
-    100% { transform:rotateY(360deg); }
-  }
+  @keyframes ball-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
   @keyframes score-pop {
     0% { transform:translateY(-16px) scale(1.2); opacity:0; }
     100% { transform:translateY(0) scale(1); opacity:1; }
@@ -216,8 +212,8 @@
   @media (max-width:500px) {
     .wrap { padding:32px 16px; }
     .card { padding:6px 12px 10px; }
-    :root { --logo-w:100px; }
-    .champions-center { height:100px; }
+    :root { --logo-w:64px; }
+    .champions-center { height:64px; }
     .progress-row { gap:2px; }
     .progress-row { --seg-h:3px; margin:8px 0 0; }
   }
