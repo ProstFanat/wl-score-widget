@@ -12,6 +12,13 @@
     font-weight:700;
     font-display:swap;
   }
+  @font-face {
+    font-family:"Champions";
+    src:url("/assets/champions-league/Champions-Bold.ttf") format("truetype");
+    font-style:normal;
+    font-weight:700;
+    font-display:swap;
+  }
   :root {
     color-scheme:dark;
     --green:#00ef65;
@@ -106,8 +113,9 @@
   .side.loss { grid-column:3; }
   .number {
     display:block;
+    font-family:"Champions",sans-serif;
     font-size:60px;
-    font-weight:900;
+    font-weight:700;
     line-height:1;
     text-shadow:0 2px 8px rgba(0,0,0,.75);
   }
@@ -139,8 +147,9 @@
   .number.out { opacity:0; transform:scale(.6); }
   .number.tick { animation:score-pop .48s cubic-bezier(.2,1.35,.35,1); }
   .word {
+    font-family:"Champions",sans-serif;
     font-size:44px;
-    font-weight:900;
+    font-weight:700;
     letter-spacing:3px;
     line-height:1;
     opacity:0;
