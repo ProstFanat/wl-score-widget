@@ -1,0 +1,292 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="transparent">
+<title>Winter Frame</title>
+<style>
+  :root {
+    color-scheme:dark;
+    --ice:#AEE8FF; --frost:#F5FAFF; --gold:#D4AF37; --pine:#1E5631;
+    --band:4vmin; --corner:30vmin;
+  }
+  * { box-sizing:border-box; }
+  html, body { width:100%; height:100%; margin:0; overflow:hidden; background:transparent; }
+  .frame { position:relative; width:100vw; height:100vh; overflow:hidden; }
+
+  /* Frosted-glass border band (union of four edge fades) */
+  .band, .shade { position:absolute; inset:0; pointer-events:none;
+    -webkit-mask:linear-gradient(to bottom,#000,transparent var(--m)),linear-gradient(to top,#000,transparent var(--m)),linear-gradient(to right,#000,transparent var(--m)),linear-gradient(to left,#000,transparent var(--m));
+            mask:linear-gradient(to bottom,#000,transparent var(--m)),linear-gradient(to top,#000,transparent var(--m)),linear-gradient(to right,#000,transparent var(--m)),linear-gradient(to left,#000,transparent var(--m)); }
+  .shade { --m:calc(var(--band) * .55); background:rgba(6,28,30,.55); }
+  .band { --m:calc(var(--band) * 1.35); background:linear-gradient(135deg,rgba(245,250,255,.52),rgba(174,232,255,.34) 50%,rgba(245,250,255,.5)); }
+
+  .line { position:absolute; pointer-events:none; border-radius:calc(var(--band) * .35); }
+  .line.outer { inset:calc(var(--band) * .14); border:1px solid rgba(245,250,255,.7); }
+  .line.inner { inset:calc(var(--band) * 1.12); border:1.5px solid rgba(174,232,255,.85); box-shadow:0 0 calc(var(--band) * .3) rgba(174,232,255,.5); animation:pulse 10s ease-in-out infinite; }
+  .line.gold { inset:calc(var(--band) * 1.24); border:1px solid rgba(212,175,55,.55); }
+
+  /* Light sweep that travels along the top and bottom frame lines now and then */
+  .glint { position:absolute; left:0; width:22%; height:2px; pointer-events:none; opacity:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent); animation:sweep 14s ease-in-out infinite; }
+  .glint.top { top:calc(var(--band) * 1.12 - 1px); }
+  .glint.bottom { bottom:calc(var(--band) * 1.12 - 1px); animation-delay:-7s; animation-direction:reverse; }
+
+  #lights { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+  .wire { fill:none; stroke:#0f2a1c; stroke-linecap:round; }
+  .wire-hi { fill:none; stroke:rgba(140,200,160,.35); stroke-linecap:round; }
+  .halo { animation:halo 3.6s ease-in-out infinite; animation-delay:var(--d); }
+  .glass { animation:bulb 3.6s ease-in-out infinite; animation-delay:var(--d); }
+  .bulb.spark .halo, .bulb.spark .glass { animation-duration:1.8s; }
+
+  .corner { position:absolute; width:var(--corner); height:var(--corner); overflow:visible; pointer-events:none;
+    fill:none; stroke:var(--frost); stroke-linecap:round; }
+  .corner.tl { top:0; left:0; } .corner.tr { top:0; right:0; transform:scaleX(-1); }
+  .corner.bl { bottom:0; left:0; } .corner.br { bottom:0; right:0; transform:scaleX(-1); }
+
+  /* Animated frost: trunks grow in once, outer twigs keep re-crystallising in slow waves */
+  .fr { stroke-dasharray:1; stroke-dashoffset:1; animation:grow var(--t) linear var(--d) forwards; }
+  .fr.d2 { animation:grow var(--t) linear var(--d) forwards, breathe 16s ease-in-out calc(var(--d) + 5s) infinite; }
+  .fr.under { stroke:rgba(6,34,44,.42); }
+  .fr.shine { stroke:url(#shine); }
+  .haze { animation:haze 10s ease-in-out infinite; }
+  .pop { transform-box:fill-box; transform-origin:center; opacity:0; animation:pop 11s ease-in-out infinite; animation-delay:var(--d); }
+  .spin { transform-box:fill-box; transform-origin:center; animation:spin 60s linear infinite; }
+  .spin.rev { animation-direction:reverse; animation-duration:80s; }
+  .tw { transform-box:fill-box; transform-origin:center; animation:twinkle 5s ease-in-out infinite; animation-delay:var(--d); }
+  .sway { animation:sway 7s ease-in-out infinite; animation-delay:var(--d); }
+
+  .snow { position:absolute; overflow:hidden; pointer-events:none; }
+  .snow.v { top:0; bottom:0; width:calc(var(--band) * 1.5); } .snow.v.l { left:0; } .snow.v.r { right:0; }
+  .snow.h { left:0; right:0; height:calc(var(--band) * 1.5); } .snow.h.t { top:0; } .snow.h.b { bottom:0; }
+  .flake { position:absolute; border-radius:50%; background:var(--frost); box-shadow:0 0 4px rgba(245,250,255,.9); will-change:transform; }
+
+  @keyframes pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
+  @keyframes sweep { 0% { transform:translateX(-25vw); opacity:0; } 4% { opacity:1; } 30% { opacity:1; } 34% { transform:translateX(105vw); opacity:0; } 100% { transform:translateX(105vw); opacity:0; } }
+  @keyframes halo { 0%,100% { opacity:.45; } 50% { opacity:1; } }
+  @keyframes bulb { 0%,100% { opacity:.78; } 50% { opacity:1; } }
+  @keyframes grow { to { stroke-dashoffset:0; } }
+  @keyframes breathe { 0%,30% { stroke-dashoffset:0; opacity:1; } 55% { stroke-dashoffset:.9; opacity:.25; } 85%,100% { stroke-dashoffset:0; opacity:1; } }
+  @keyframes haze { 0%,100% { opacity:.55; } 50% { opacity:.95; } }
+  @keyframes pop { 0% { opacity:0; transform:scale(0) rotate(0); } 12% { opacity:1; transform:scale(1) rotate(30deg); } 70% { opacity:.9; transform:scale(1) rotate(60deg); } 85%,100% { opacity:0; transform:scale(.5) rotate(80deg); } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes twinkle { 0%,100% { opacity:.25; transform:scale(.6); } 50% { opacity:1; transform:scale(1.15); } }
+  @keyframes sway { 0%,100% { transform:rotate(-2.5deg); } 50% { transform:rotate(2.5deg); } }
+  @keyframes fall { from { transform:translate3d(0,-6%,0); } to { transform:translate3d(var(--dx),106%,0); } }
+  @keyframes drift { from { transform:translate3d(-4%,0,0); } to { transform:translate3d(104%,var(--dy),0); } }
+  @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:0s !important; animation-iteration-count:1 !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gGold" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#fff3b8"/><stop offset=".35" stop-color="#D4AF37"/><stop offset="1" stop-color="#5e470c"/></radialGradient>
+    <radialGradient id="gIce" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#f2fbff"/><stop offset=".4" stop-color="#96d6f4"/><stop offset="1" stop-color="#2f6f92"/></radialGradient>
+    <radialGradient id="gPine" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#9adcae"/><stop offset=".4" stop-color="#2e7848"/><stop offset="1" stop-color="#0b2b16"/></radialGradient>
+    <radialGradient id="gRuby" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#ffd0d0"/><stop offset=".4" stop-color="#c7303c"/><stop offset="1" stop-color="#4f0c13"/></radialGradient>
+    <radialGradient id="haze" cx="0" cy="0" r="1"><stop offset="0" stop-color="#F5FAFF" stop-opacity=".75"/><stop offset=".45" stop-color="#AEE8FF" stop-opacity=".3"/><stop offset="1" stop-color="#AEE8FF" stop-opacity="0"/></radialGradient>
+    <linearGradient id="shine" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="70" y2="70">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      <animateTransform attributeName="gradientTransform" type="translate" values="-160 -160;-160 -160;260 260;260 260" keyTimes="0;.45;.8;1" dur="9s" repeatCount="indefinite"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<main class="frame">
+  <div class="shade"></div>
+  <div class="band"></div>
+  <div class="line outer"></div><div class="line inner"></div><div class="line gold"></div>
+  <div class="glint top"></div><div class="glint bottom"></div>
+  <svg id="lights" aria-hidden="true"></svg>
+  <svg class="corner tl" viewBox="0 0 240 240" aria-hidden="true"></svg>
+  <svg class="corner tr" viewBox="0 0 240 240" aria-hidden="true"></svg>
+  <svg class="corner bl" viewBox="0 0 240 240" aria-hidden="true"></svg>
+  <svg class="corner br" viewBox="0 0 240 240" aria-hidden="true"></svg>
+  <div class="snow v l"></div><div class="snow v r"></div><div class="snow h t"></div><div class="snow h b"></div>
+</main>
+
+<script>
+(() => {
+  let seed = 1;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const R = (a, b) => a + rnd() * (b - a);
+  const f = n => n.toFixed(1);
+  const rad = d => d * Math.PI / 180;
+
+  /* ---------- Corners ---------- */
+  function fern(x, y, a, l, depth, dist, out) {
+    const x2 = x + Math.cos(a) * l, y2 = y + Math.sin(a) * l;
+    out.push({ x, y, x2, y2, l, depth, dist });
+    if (depth >= 2 || l < 6) return;
+    const n = Math.max(2, Math.round(l / (depth ? 22 : 17)));
+    for (let i = 1; i <= n; i++) {
+      const t = i / (n + 1), bx = x + (x2 - x) * t, by = y + (y2 - y) * t;
+      for (const s of [-1, 1]) fern(bx, by, a + s * rad(55 + R(-8, 8)), l * .38 * (1 - t * .45), depth + 1, dist + l * t, out);
+    }
+  }
+
+  function flakePath(cx, cy, r) {
+    let d = '';
+    for (let i = 0; i < 6; i++) {
+      const a = i * Math.PI / 3, ex = cx + Math.cos(a) * r, ey = cy + Math.sin(a) * r;
+      d += `M${f(cx)} ${f(cy)}L${f(ex)} ${f(ey)}`;
+      for (const [k, bl] of [[.45, .32], [.72, .24]]) {
+        const bx = cx + Math.cos(a) * r * k, by = cy + Math.sin(a) * r * k;
+        for (const s of [-1, 1]) { const b = a + s * rad(58); d += `M${f(bx)} ${f(by)}L${f(bx + Math.cos(b) * r * bl)} ${f(by + Math.sin(b) * r * bl)}`; }
+      }
+    }
+    return d;
+  }
+
+  function sparkle(x, y, r, delay, fill = '#fff') {
+    const k = .16, p = [[x, y - r], [x + r * k, y - r * k], [x + r, y], [x + r * k, y + r * k], [x, y + r], [x - r * k, y + r * k], [x - r, y], [x - r * k, y - r * k]];
+    return `<polygon class="tw" style="--d:${delay}s" points="${p.map(q => q.map(f).join(',')).join(' ')}" fill="${fill}" stroke="none"/>`;
+  }
+
+  function pine(x0, y0, ang, len) {
+    const ca = Math.cos(ang), sa = Math.sin(ang), px = -sa, py = ca, pts = [];
+    for (let s = 0; s <= len; s += 4) { const off = 2.6 * Math.sin(s / 24); pts.push([x0 + ca * s + px * off, y0 + sa * s + py * off]); }
+    const needles = ['', '', ''];
+    let tips = '';
+    pts.slice(1).forEach(([x, y], i) => {
+      const nl = 11.5 - 6 * ((i + 1) * 4 / len);
+      for (const sd of [-1, 1]) {
+        const a = ang + sd * rad(48 + R(-6, 6)), x2 = x + Math.cos(a) * nl, y2 = y + Math.sin(a) * nl;
+        needles[Math.floor(rnd() * 3)] += `M${f(x)} ${f(y)}L${f(x2)} ${f(y2)}`;
+        if (rnd() < .5) tips += `M${f(x2)} ${f(y2)}h0`;
+      }
+    });
+    let s = `<path d="M${pts.map(p => p.map(f).join(' ')).join('L')}" stroke="#123a22" stroke-width="1.6"/>`;
+    ['#1E5631', '#2a6c3e', '#184a2a'].forEach((c, i) => { s += `<path d="${needles[i]}" stroke="${c}" stroke-width="1.15"/>`; });
+    s += `<path d="${tips}" stroke="#F5FAFF" stroke-width="1.7" opacity=".9"/>`;
+    for (let i = 0; i < 3; i++) {
+      const [bx, by] = pts[6 + Math.floor(rnd() * (pts.length - 10))];
+      const c = i === 1 ? '#c7303c' : '#D4AF37';
+      s += `<circle cx="${f(bx)}" cy="${f(by)}" r="2.3" fill="${c}" stroke="none"/><circle cx="${f(bx - .7)}" cy="${f(by - .7)}" r=".75" fill="#fff4d6" stroke="none"/>`;
+    }
+    return s;
+  }
+
+  function bauble(cx, cy, r, grad, stripe, hang, delay) {
+    const cap = r * .5, ch = r * .3, top = cy - r, sy = cy + r * .1, hw = Math.sqrt(r * r - (r * .1) ** 2);
+    let s = '';
+    if (hang) s += `<g class="sway" style="--d:${delay}s;transform-origin:${cx}px 0px;animation-duration:${f(6 + r / 6)}s"><path d="M${cx} 0L${cx} ${f(top - ch - 2)}" stroke="#D4AF37" stroke-width=".8" opacity=".9"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="${r * 1.6}" fill="url(#haze)" stroke="none" opacity=".35"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${grad})" stroke="none"/>`;
+    s += `<path d="M${f(cx - hw)} ${f(sy)}L${f(cx + hw)} ${f(sy)}" stroke="${stripe}" stroke-width="${f(r * .14)}" opacity=".9"/>`;
+    s += `<path d="M${f(cx - hw * .9)} ${f(cy - r * .32)}L${f(cx + hw * .9)} ${f(cy - r * .32)}" stroke="${stripe}" stroke-width="${f(r * .05)}" stroke-dasharray="${f(r * .12)} ${f(r * .16)}" opacity=".85"/>`;
+    s += `<ellipse cx="${f(cx - r * .35)}" cy="${f(cy - r * .4)}" rx="${f(r * .22)}" ry="${f(r * .13)}" fill="#fff" opacity=".8" stroke="none" transform="rotate(-35 ${f(cx - r * .35)} ${f(cy - r * .4)})"/>`;
+    s += `<rect x="${f(cx - cap / 2)}" y="${f(top - ch + .6)}" width="${f(cap)}" height="${f(ch + 1)}" rx="1.2" fill="#D4AF37" stroke="none"/>`;
+    s += `<circle cx="${cx}" cy="${f(top - ch - 1.4)}" r="1.6" fill="none" stroke="#D4AF37" stroke-width=".8"/>`;
+    s += sparkle(cx - r * .35, cy - r * .42, r * .32, delay + 1.3);
+    if (hang) s += '</g>';
+    return s;
+  }
+
+  function frostGroup(cornerSeed) {
+    seed = cornerSeed;
+    const segs = [];
+    for (const [a, l] of [[3, 205], [87, 185], [45, 135], [22, 115], [66, 110], [12, 70], [78, 72]]) fern(3, 3, rad(a + R(-2, 2)), l, 0, 0, segs);
+    const speed = 70; // viewBox units per second
+    const seg = (s, cls, extra = '') => `<path class="fr ${cls}" pathLength="1" d="M${f(s.x)} ${f(s.y)}L${f(s.x2)} ${f(s.y2)}" style="--d:${f(.3 + s.dist / speed)}s;--t:${f(Math.max(.25, s.l / speed))}s" ${extra}/>`;
+    let s = `<circle class="haze" cx="0" cy="0" r="175" fill="url(#haze)" stroke="none"/>`;
+    // soft bokeh
+    for (let i = 0; i < 5; i++) {
+      const a = R(.15, 1.4), d = R(80, 200), r = R(5, 14);
+      s += `<circle cx="${f(Math.cos(a) * d)}" cy="${f(Math.sin(a) * d)}" r="${f(r)}" fill="${['#AEE8FF', '#D4AF37', '#F5FAFF'][i % 3]}" fill-opacity=".14" stroke="${['#AEE8FF', '#D4AF37', '#F5FAFF'][i % 3]}" stroke-opacity=".28" stroke-width=".7"/>`;
+    }
+    s += pine(6, 20, rad(3), 168) + pine(20, 6, rad(87), 148);
+    s += segs.filter(x => x.depth === 0).map(x => seg(x, 'under', 'stroke-width="2.8"')).join('');
+    s += segs.map((x, i) => seg(x, x.depth === 2 && i % 3 === 0 ? 'd2' : 'd' + Math.min(x.depth, 1) + ' s' + x.depth,`stroke-width="${[1.3, .9, .6][x.depth]}" opacity="${[.95, .85, .7][x.depth]}"`)).join('');
+    s += segs.filter(x => x.depth === 0).map(x => seg(x, 'shine', 'stroke-width="2"')).join('');
+    // big slow-turning snowflakes
+    [[132, 78, 19, ''], [58, 140, 15, ' rev'], [170, 34, 9, ''], [32, 190, 9, ' rev']].forEach(([x, y, r, c]) => {
+      s += `<path class="spin${c}" d="${flakePath(x, y, r)}" stroke-width="1" opacity=".92"/><circle cx="${x}" cy="${y}" r="1.6" fill="#fff" stroke="none"/>`;
+    });
+    // tiny crystals that form and melt
+    for (let i = 0; i < 9; i++) {
+      const a = R(.08, 1.5), d = R(40, 200);
+      s += `<path class="pop" style="--d:${f(-R(0, 11))}s" d="${flakePath(Math.cos(a) * d, Math.sin(a) * d, R(2.5, 4.5))}" stroke-width=".7"/>`;
+    }
+    [[84, 26, 6], [26, 86, 5], [196, 20, 4.5], [20, 214, 4.5], [112, 128, 4.5], [154, 104, 3.5]].forEach(([x, y, r], i) => { s += sparkle(x, y, r, -i * .9); });
+    return s;
+  }
+
+  const topOrnaments = bauble(80, 98, 20, 'gGold', '#F5FAFF', true, 0) + bauble(130, 64, 14, 'gIce', '#D4AF37', true, -2) + bauble(170, 44, 9.5, 'gRuby', '#D4AF37', true, -4);
+  const bottomOrnaments = bauble(72, 221, 17, 'gPine', '#D4AF37', false, -1) + bauble(106, 228, 11, 'gGold', '#F5FAFF', false, -3) + bauble(136, 225, 13.5, 'gIce', '#D4AF37', false, -5);
+  [['tl', 11, false], ['tr', 23, false], ['bl', 37, true], ['br', 53, true]].forEach(([pos, sd, bottom]) => {
+    const el = document.querySelector('.corner.' + pos);
+    const frost = frostGroup(sd);
+    el.innerHTML = bottom ? `<g transform="translate(0 240) scale(1 -1)">${frost}</g>${bottomOrnaments}` : frost + topOrnaments;
+  });
+
+  /* ---------- Christmas lights (rebuilt to fit any source size) ---------- */
+  const COLORS = [['#FFD36B', '#D4AF37'], ['#AEE8FF', '#5fb6e0'], ['#FF6B6B', '#c7303c'], ['#FFF6E0', '#e8d6a8'], ['#7EE0A0', '#1E5631']];
+  const lights = document.getElementById('lights');
+  function buildLights() {
+    const w = innerWidth, h = innerHeight, m = Math.min(w, h), B = m * .04, C = m * .30;
+    const r = B * .2, sag = B * .3, off = B * .32, gap = B * 1.9;
+    let defs = '<defs>';
+    COLORS.forEach(([c, d], k) => {
+      defs += `<radialGradient id="b${k}" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="${c}"/><stop offset="1" stop-color="${d}"/></radialGradient>`;
+      defs += `<radialGradient id="h${k}"><stop offset="0" stop-color="${c}" stop-opacity=".75"/><stop offset=".4" stop-color="${c}" stop-opacity=".22"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+    });
+    defs += '</defs>';
+    const edges = [
+      { p: [0, off], d: [1, 0], n: [0, 1], len: w, rot: 0 },
+      { p: [w, h - off], d: [-1, 0], n: [0, -1], len: w, rot: 180 },
+      { p: [off, h], d: [0, -1], n: [1, 0], len: h, rot: -90 },
+      { p: [w - off, 0], d: [0, 1], n: [-1, 0], len: h, rot: 90 }
+    ];
+    let wires = '', bulbs = '', idx = 0;
+    seed = 97;
+    for (const e of edges) {
+      const a = C * .5, span = e.len - 2 * a;
+      const count = Math.round(span / gap);
+      if (count < 2) continue;
+      const step = span / count;
+      const pt = t => [e.p[0] + e.d[0] * t, e.p[1] + e.d[1] * t];
+      let path = `M${pt(a).map(f).join(' ')}`;
+      for (let i = 0; i < count; i++) {
+        const t0 = a + i * step, mid = pt(t0 + step / 2), end = pt(t0 + step);
+        const cp = [mid[0] + e.n[0] * sag * 2, mid[1] + e.n[1] * sag * 2];
+        path += `Q${cp.map(f).join(' ')} ${end.map(f).join(' ')}`;
+        const bx = mid[0] + e.n[0] * sag, by = mid[1] + e.n[1] * sag;
+        const k = idx % COLORS.length, delay = -((idx % 4) * .9 + R(0, .4));
+        const cls = rnd() < .12 ? 'bulb spark' : 'bulb';
+        bulbs += `<g class="${cls}" style="--d:${f(delay)}s" transform="translate(${f(bx)} ${f(by)}) rotate(${f(e.rot + R(-14, 14))})">` +
+          `<circle class="halo" cy="${f(r * 1.25)}" r="${f(r * 2.8)}" fill="url(#h${k})"/>` +
+          `<rect x="${f(-r * .42)}" y="${f(-r * .2)}" width="${f(r * .84)}" height="${f(r * .62)}" rx="${f(r * .15)}" fill="#b8963a"/>` +
+          `<path class="glass" d="M0 ${f(r * .4)}C${f(r * .78)} ${f(r * .55)} ${f(r * .72)} ${f(r * 1.6)} 0 ${f(r * 2.15)}C${f(-r * .72)} ${f(r * 1.6)} ${f(-r * .78)} ${f(r * .55)} 0 ${f(r * .4)}Z" fill="url(#b${k})"/>` +
+          `<ellipse cx="${f(-r * .22)}" cy="${f(r * .95)}" rx="${f(r * .12)}" ry="${f(r * .3)}" fill="#fff" opacity=".7"/></g>`;
+        idx++;
+      }
+      wires += `<path class="wire" d="${path}" stroke-width="${f(Math.max(1, B * .06))}"/><path class="wire-hi" d="${path}" stroke-width="${f(Math.max(.5, B * .02))}"/>`;
+    }
+    lights.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    lights.innerHTML = defs + wires + bulbs;
+  }
+  buildLights();
+  let rt;
+  addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(buildLights, 150); });
+
+  /* ---------- Slow, sparse snow along the border strips only ---------- */
+  const rr = (a, b) => a + Math.random() * (b - a);
+  document.querySelectorAll('.snow').forEach(strip => {
+    const vertical = strip.classList.contains('v');
+    for (let i = 0; i < 9; i++) {
+      const fl = document.createElement('i');
+      fl.className = 'flake';
+      const size = rr(1.5, 4);
+      fl.style.width = fl.style.height = size + 'px';
+      fl.style.opacity = rr(.35, .95);
+      if (vertical) { fl.style.left = rr(0, 100) + '%'; fl.style.top = 0; fl.style.setProperty('--dx', rr(-30, 30) + 'px'); fl.style.animation = `fall ${rr(16, 26)}s linear ${-rr(0, 26)}s infinite`; }
+      else { fl.style.top = rr(0, 100) + '%'; fl.style.left = 0; fl.style.setProperty('--dy', rr(-14, 14) + 'px'); fl.style.animation = `drift ${rr(26, 40)}s linear ${-rr(0, 40)}s infinite`; }
+      strip.appendChild(fl);
+    }
+  });
+})();
+</script>
+</body>
+</html>

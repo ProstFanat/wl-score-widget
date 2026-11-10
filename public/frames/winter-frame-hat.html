@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="transparent">
+<title>Winter Frame Hat</title>
+<style>
+  * { box-sizing:border-box; }
+  html, body { width:100%; min-height:100%; margin:0; background:transparent; }
+  .frame { position:relative; width:100vw; aspect-ratio:3 / 2; }
+  .frame-art {
+    display:block;
+    width:100%;
+    height:auto;
+    animation:lights-breathe 3s ease-in-out infinite;
+  }
+  @keyframes lights-breathe {
+    0%,100% { filter:brightness(1) drop-shadow(0 0 3px rgba(110,205,255,.35)); }
+    50% { filter:brightness(1.12) drop-shadow(0 0 12px rgba(110,205,255,.8)); }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .frame-art { animation:none; }
+  }
+</style>
+</head>
+<body>
+<main class="frame" aria-label="Winter frame with Christmas lights and Santa hat">
+  <img class="frame-art" src="/frames/frame-assets/winter-frame-hat.png" alt="">
+</main>
+</body>
+</html>

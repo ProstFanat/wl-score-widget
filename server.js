@@ -112,8 +112,10 @@ const pages = {
   '/new': 'rooms/create.html',
   '/find-room': 'rooms/find.html',
   '/guide': 'guide.html',
-  '/camera-frames': 'camera-frames/index.html',
-  '/camera-frames/halloween': 'camera-frames/halloween.html',
+  '/frames': 'frames/index.html',
+  '/frames/halloween': 'frames/halloween.html',
+  '/frames/winter': 'frames/winter.html',
+  '/frames/winter-frame-hat': 'frames/winter-frame-hat.html',
   '/preview/default': 'overlays/default.html',
   '/preview/durka': 'overlays/durka.html',
   '/preview/halloween': 'overlays/halloween.html',
@@ -740,6 +742,11 @@ async function handleRequest(req, res) {
     }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, pages[url])));
+  }
+
+  if (req.method === 'GET' && url === '/frames/frame-assets/winter-frame-hat.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'frames/frame-assets/winter-frame-hat.png')));
   }
 
   if (req.method === 'GET' && url === '/examples/champions-results.json') {
