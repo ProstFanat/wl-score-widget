@@ -125,6 +125,37 @@
     0%,100% { opacity:0; transform:scale(.4); }
     50% { opacity:1; transform:scale(1.3); }
   }
+
+  /* ---------- Christmas: light string and baubles ---------- */
+  .xmas { position:absolute; inset:0; z-index:3; pointer-events:none; }
+  .lights { position:absolute; top:-4px; left:0; width:100%; height:44px; overflow:visible; }
+  .lights .wire { fill:none; stroke:#0b1030; stroke-width:2; }
+  .lights .bulb { fill:var(--c); filter:drop-shadow(0 0 4px var(--c)) drop-shadow(0 0 9px var(--c)); animation:bulb-blink 2.4s ease-in-out infinite; }
+  .lights .cap { fill:#222a58; }
+  .bauble {
+    position:absolute;
+    top:2px;
+    width:0;
+    height:0;
+    transform-origin:50% 0;
+    animation:bauble-swing 4.5s ease-in-out infinite alternate;
+  }
+  .bauble::before { content:""; position:absolute; left:0; top:0; width:1.5px; height:30px; background:rgba(210,225,255,.8); }
+  .bauble::after {
+    content:"";
+    position:absolute;
+    left:-10px;
+    top:28px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 30%,#fff 0 9%,transparent 11%),radial-gradient(circle at 40% 35%,var(--b1),var(--b2) 75%);
+    box-shadow:0 0 10px var(--b2),inset -2px -3px 5px rgba(0,0,0,.35);
+  }
+  .bauble.a { left:25%; --b1:#ff6b6b; --b2:#c1121f; }
+  .bauble.b { left:75%; --b1:#ffe27a; --b2:#d19a12; animation-delay:-2s; animation-duration:5.2s; }
+  @keyframes bulb-blink { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+  @keyframes bauble-swing { from { transform:rotate(-6deg); } to { transform:rotate(6deg); } }
   .edge { position:absolute; z-index:-1; top:14px; bottom:14px; width:5px; border-radius:3px; }
   .edge.win { left:9px; background:var(--win); box-shadow:0 0 10px rgba(110,140,255,.95),0 0 3px #fff; animation:edge-flicker 6s linear infinite; }
   .edge.loss { right:9px; background:repeating-linear-gradient(180deg,var(--loss) 0 5px,transparent 5px 9px); box-shadow:0 0 8px rgba(138,77,255,.5); }
@@ -207,43 +238,6 @@
     background-position:150% 0;
     animation:logo-shine 7s ease-in-out 1.2s infinite;
   }
-  .progress-row {
-    display:grid;
-    grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.5fr) var(--logo-w) minmax(0,.5fr) repeat(7,minmax(0,1fr));
-    gap:4px;
-    margin:12px 0 0;
-    align-items:center;
-    --seg-h:5px;
-  }
-  .progress-segment {
-    height:var(--seg-h);
-    border-radius:1px;
-    background:rgba(150,180,255,.2);
-  }
-  .progress-segment:nth-child(8) { display:contents; }
-  .progress-segment:nth-child(8)::before,
-  .progress-segment:nth-child(8)::after {
-    height:var(--seg-h);
-    border-radius:1px;
-    background:rgba(150,180,255,.2);
-    content:"";
-  }
-  .progress-segment:nth-child(8)::before { grid-column:8; }
-  .progress-segment:nth-child(8)::after { grid-column:10; }
-  .progress-segment { --paint:none; }
-  .progress-segment.win, .progress-segment:nth-child(8).win::before, .progress-segment:nth-child(8).win::after {
-    background:linear-gradient(90deg,#fff,#9fb4ff) left center / 100% 100% no-repeat, rgba(150,180,255,.2);
-    box-shadow:0 0 8px rgba(110,140,255,.9);
-  }
-  .progress-segment.loss, .progress-segment:nth-child(8).loss::before, .progress-segment:nth-child(8).loss::after {
-    background:repeating-linear-gradient(45deg,var(--loss) 0 3px,#161c4a 3px 6px) left center / 100% 100% no-repeat, rgba(150,180,255,.2);
-  }
-  .progress-segment:nth-child(8).win, .progress-segment:nth-child(8).loss { background:none; box-shadow:none; }
-  .progress-segment.fresh { animation:seg-fill .6s ease-out both; }
-  .progress-segment:nth-child(8).fresh { animation:none; }
-  .progress-segment:nth-child(8).fresh::before { animation:seg-fill .3s ease-out both; }
-  .progress-segment:nth-child(8).fresh::after { animation:seg-fill .3s ease-out .3s both; }
-  @keyframes seg-fill { from { background-size:0% 100%, auto; } to { background-size:100% 100%, auto; } }
   @keyframes card-in { from { opacity:0; transform:translateY(-18px) scale(.94); } to { opacity:1; transform:none; } }
   @keyframes outline-pulse {
     0%,100% { box-shadow:0 0 0 4px var(--ink),0 0 0 5px rgba(140,170,255,.45),0 12px 22px rgba(0,0,0,.55),0 0 20px rgba(91,108,255,.25),inset 0 0 14px rgba(110,140,255,.12); }
@@ -275,12 +269,12 @@
     100% { opacity:0; transform:scale(1.9); }
   }
   @media (max-width:500px) {
+    .bauble { display:none; }
     .wrap { padding:32px 16px; }
     .card { padding:6px 12px 10px; }
     :root { --logo-w:170px; }
     .number { font-size:46px; }
     .scoreline { min-height:82px; }
-    .progress-row { gap:2px; --seg-h:4px; margin:8px 0 0; }
   }
   @media (prefers-reduced-motion:reduce) {
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; }
@@ -294,6 +288,10 @@
       <span class="grain"></span><span class="lines"></span><span class="spatter"></span><span class="shine"></span>
       <span class="frost"></span><span class="twinkle"><i></i><i></i><i></i><i></i><i></i><i></i></span><canvas id="snow"></canvas>
     </div>
+    <div class="xmas" aria-hidden="true">
+      <svg class="lights" id="lights"></svg>
+      <span class="bauble a"></span><span class="bauble b"></span>
+    </div>
     <span class="edge win" aria-hidden="true"></span>
     <span class="edge loss" aria-hidden="true"></span>
     <div class="scoreline">
@@ -303,40 +301,50 @@
       </div>
       <div class="side loss"><span class="number" id="l">0</span><span class="word loss" id="l-word">LOSS</span><span class="splat"></span></div>
     </div>
-    <div class="progress-row" id="progress" role="group" aria-label="Match results"></div>
   </section>
 </div>
 <script>
   const BASE = location.protocol === 'file:' ? 'http://localhost:3000' : '';
-  const progress = document.getElementById('progress');
-  const progressSegments = 15;
-
-  for (let i = 0; i < progressSegments; i++) {
-    const segment = document.createElement('span');
-    segment.className = 'progress-segment';
-    progress.appendChild(segment);
-  }
-
-  // Whole-pixel, equal-width segments: fractional fr tracks render some
-  // segments 1px wider than others, which shows as a ragged line when resized.
-  const logoProbe = document.createElement('div');
-  logoProbe.style.cssText = 'position:absolute;visibility:hidden;width:var(--logo-w)';
-  document.body.appendChild(logoProbe);
-  function layoutProgress() {
-    const available = progress.clientWidth;
-    const logo = Math.round(logoProbe.getBoundingClientRect().width);
-    const minGap = window.matchMedia('(max-width:500px)').matches ? 2 : 4;
-    let segment = Math.floor((available - logo - 16 * minGap) / progressSegments);
-    segment -= segment % 2;
-    if (segment < 2) return;
-    const gap = Math.floor((available - logo - progressSegments * segment) / 16);
-    progress.style.gridTemplateColumns = `repeat(7,${segment}px) ${segment / 2}px ${logo}px ${segment / 2}px repeat(7,${segment}px)`;
-    progress.style.columnGap = `${gap}px`;
-    progress.style.justifyContent = 'center';
-  }
-  new ResizeObserver(layoutProgress).observe(progress);
-  layoutProgress();
-
+  // String of Christmas lights sagging along the top edge.
+  (function lights() {
+    const svg = document.getElementById('lights');
+    const card = document.getElementById('card');
+    const colors = ['#ff3b4a', '#ffd23f', '#3ddc84', '#4aa8ff'];
+    const ns = 'http://www.w3.org/2000/svg';
+    function build() {
+      const w = card.clientWidth;
+      const swags = Math.max(2, Math.round(w / 110));
+      const seg = w / swags;
+      svg.setAttribute('viewBox', `0 0 ${w} 44`);
+      svg.textContent = '';
+      let d = 'M0 6';
+      for (let i = 0; i < swags; i++) d += ` Q${(i + .5) * seg} 34 ${(i + 1) * seg} 6`;
+      const wire = document.createElementNS(ns, 'path');
+      wire.setAttribute('d', d);
+      wire.setAttribute('class', 'wire');
+      svg.appendChild(wire);
+      let n = 0;
+      for (let i = 0; i < swags; i++) {
+        [.18, .5, .82].forEach(t => {
+          const x = (i + t) * seg;
+          const y = 2 * (1 - t) * t * 34 + ((1 - t) ** 2 + t ** 2) * 6;
+          const g = document.createElementNS(ns, 'g');
+          g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+          const cap = document.createElementNS(ns, 'rect');
+          cap.setAttribute('class', 'cap'); cap.setAttribute('x', -2); cap.setAttribute('y', 0); cap.setAttribute('width', 4); cap.setAttribute('height', 4);
+          const bulb = document.createElementNS(ns, 'ellipse');
+          bulb.setAttribute('class', 'bulb'); bulb.setAttribute('cx', 0); bulb.setAttribute('cy', 8); bulb.setAttribute('rx', 3.6); bulb.setAttribute('ry', 5);
+          bulb.style.setProperty('--c', colors[n % colors.length]);
+          bulb.style.animationDelay = `${-(n * .37 % 2.4).toFixed(2)}s`;
+          g.append(cap, bulb);
+          svg.appendChild(g);
+          n++;
+        });
+      }
+    }
+    new ResizeObserver(build).observe(card);
+    build();
+  })();
 
   // Gentle snowfall inside the card (canvas is clipped by .bg).
   (function snowfall() {
@@ -390,7 +398,6 @@
   })();
 
   let first = true;
-  let shownHistory = [];
 
   const WORD_MS = 1000;
   const timers = {};
@@ -426,24 +433,6 @@
   function render(state) {
     updateScore('w', state.wins);
     updateScore('l', state.losses);
-    const total = state.wins + state.losses;
-    const history = Array.isArray(state.history) && state.history.length === total
-      ? state.history
-      : [...'W'.repeat(state.wins), ...'L'.repeat(state.losses)];
-    [...progress.children].forEach((segment, index) => {
-      const result = history[index];
-      const isNew = !first && result && !shownHistory[index];
-      if (!result) segment.classList.remove('fresh');
-      if (isNew) {
-        segment.classList.remove('fresh');
-        void segment.offsetWidth;
-        segment.classList.add('fresh');
-      }
-      segment.classList.toggle('win', result === 'W');
-      segment.classList.toggle('loss', result === 'L');
-      segment.title = result === 'W' ? `Match ${index + 1}: Win` : result === 'L' ? `Match ${index + 1}: Loss` : `Match ${index + 1}: Not played`;
-    });
-    shownHistory = [...history];
     first = false;
   }
 
