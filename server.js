@@ -79,6 +79,8 @@ const pages = {
   '/brofist': 'overlays/brofist.html',
   '/brofist-smash': 'overlays/brofist-smash.html',
   '/black98': 'overlays/black98.html',
+  '/deiwstar': 'overlays/deiwstar.html',
+  '/preview/deiwstar': 'overlays/deiwstar.html',
   '/luc1fer24': 'overlays/luc1fer24.html',
   '/preview/luc1fer24': 'overlays/luc1fer24.html',
   '/adrian-v1': 'overlays/adrian-v1.html',
@@ -589,12 +591,12 @@ async function handleRequest(req, res) {
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'overlays/phoenix-upg.html')));
   }
 
-  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|luc1fer24|adrian-v1|adrian-v2|donetsk1y|champions-league-v1|champions-league-v2)(\/results)?$/);
+  const roomRoute = url.match(/^\/room\/([a-f0-9]{32})\/(default|halloween|champions|default-left|halloween-left|chupapi-v1|chupapi-v2|mancity|mancity-wo-logo|durka|hetra-zidana|brofist|black98|deiwstar|luc1fer24|adrian-v1|adrian-v2|donetsk1y|champions-league-v1|champions-league-v2)(\/results)?$/);
   if (req.method === 'GET' && roomRoute) {
     if (!pool) return publicError(res, 503, 'Personal scoreboards require a configured PostgreSQL database');
     const state = await getBoard(`room:${roomRoute[1]}`);
     if (!state) return publicError(res, 404, 'Scoreboard not found');
-    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y', 'champions-league-v1', 'champions-league-v2'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
+    const overlay = roomRoute[3] ? 'results' : ['default-left', 'halloween-left', 'chupapi-v1', 'chupapi-v2', 'mancity', 'mancity-wo-logo', 'durka', 'hetra-zidana', 'brofist', 'black98', 'deiwstar', 'luc1fer24', 'adrian-v1', 'adrian-v2', 'donetsk1y', 'champions-league-v1', 'champions-league-v2'].includes(roomRoute[2]) ? roomRoute[2] : roomRoute[2] === 'halloween' ? 'halloween' : 'default';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, `overlays/${overlay}.html`)));
   }
@@ -781,6 +783,11 @@ async function handleRequest(req, res) {
   if (req.method === 'GET' && url === '/assets/black98/logo.png') {
     res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
     return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/black98/logo.png')));
+  }
+
+  if (req.method === 'GET' && url === '/assets/deiwstar/title-wide.png') {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-cache' });
+    return res.end(fs.readFileSync(path.join(PUBLIC_DIR, 'assets/deiwstar/title-wide.png')));
   }
 
   const adrianV2Asset = url.match(/^\/assets\/adrian-v2\/(logo|shark-big|shark-small)\.png$/);
